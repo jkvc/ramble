@@ -4,30 +4,26 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col">
       {/* Hero Section */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-24">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
-            <span className="bg-gradient-to-r from-blue-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
-              Ramble
-            </span>
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-16 sm:py-24">
+        <div className="w-full max-w-xl mx-auto text-center">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight mb-4">
+            Ramble
           </h1>
           
-          <p className="text-xl md:text-2xl text-[var(--muted)] mb-8 leading-relaxed">
+          <p className="text-lg sm:text-xl text-[var(--muted)] mb-8 leading-relaxed">
             Speak naturally. Watch your words appear in real-time.
-            <br />
-            Voice-to-text transcription that keeps up with your thoughts.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/signup"
-              className="px-8 py-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-lg transition-colors text-lg"
+              className="px-6 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-lg transition-colors"
             >
               Get Started
             </Link>
             <Link
               href="/login"
-              className="px-8 py-4 bg-[var(--surface)] hover:bg-[var(--surface-hover)] text-white font-medium rounded-lg border border-[var(--border)] transition-colors text-lg"
+              className="px-6 py-3 bg-[var(--surface)] hover:bg-[var(--surface-hover)] text-[var(--foreground)] font-medium rounded-lg border border-[var(--border)] transition-colors"
             >
               Sign In
             </Link>
@@ -35,38 +31,35 @@ export default function Home() {
         </div>
         
         {/* Features */}
-        <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          <div className="p-6 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
-            <div className="text-3xl mb-4">⚡</div>
-            <h3 className="text-lg font-semibold mb-2">Real-time</h3>
-            <p className="text-[var(--muted)]">
-              See words appear as you speak. No waiting, no lag.
+        <div className="mt-16 sm:mt-20 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 w-full max-w-2xl mx-auto px-4 sm:px-0">
+          <div className="p-4 sm:p-5 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+            <h3 className="text-sm font-medium mb-1">Real-time</h3>
+            <p className="text-sm text-[var(--muted)]">
+              Words appear as you speak.
             </p>
           </div>
           
-          <div className="p-6 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
-            <div className="text-3xl mb-4">🎯</div>
-            <h3 className="text-lg font-semibold mb-2">Accurate</h3>
-            <p className="text-[var(--muted)]">
-              Powered by Soniox, the most accurate speech recognition engine.
+          <div className="p-4 sm:p-5 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+            <h3 className="text-sm font-medium mb-1">Accurate</h3>
+            <p className="text-sm text-[var(--muted)]">
+              Powered by Soniox.
             </p>
           </div>
           
-          <div className="p-6 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
-            <div className="text-3xl mb-4">📱</div>
-            <h3 className="text-lg font-semibold mb-2">Everywhere</h3>
-            <p className="text-[var(--muted)]">
-              Web app now, Android keyboard coming soon.
+          <div className="p-4 sm:p-5 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+            <h3 className="text-sm font-medium mb-1">Everywhere</h3>
+            <p className="text-sm text-[var(--muted)]">
+              Web and Android.
             </p>
           </div>
         </div>
       </div>
       
       {/* Footer */}
-      <footer className="border-t border-[var(--border)] py-6 px-6">
-        <div className="max-w-5xl mx-auto flex justify-between items-center text-sm text-[var(--muted)]">
-          <span>© 2024 Ramble</span>
-          <Link href="/admin/login" className="hover:text-white transition-colors">
+      <footer className="border-t border-[var(--border)] py-4 px-4 sm:px-6">
+        <div className="max-w-xl mx-auto flex justify-between items-center text-xs text-[var(--muted)]">
+          <span>Ramble</span>
+          <Link href="/admin/login" className="hover:text-[var(--foreground)] transition-colors">
             Admin
           </Link>
         </div>

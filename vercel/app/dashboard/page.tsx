@@ -13,14 +13,7 @@ export default async function DashboardPage() {
   const access = await checkAccess(user.id, user.email, supabase);
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-2">Transcription</h1>
-        <p className="text-[var(--muted)]">
-          Press the record button and start speaking. Your words will appear in real-time.
-        </p>
-      </div>
-
+    <div className="space-y-6">
       <TranscriptionTool hasAccess={access.hasAccess} />
     </div>
   );

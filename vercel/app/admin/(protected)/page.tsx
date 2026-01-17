@@ -40,69 +40,50 @@ export default async function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-8">Dashboard</h1>
+      <h1 className="text-lg font-semibold mb-6">Dashboard</h1>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <StatCard
-          title="Total Users"
-          value={stats.totalUsers.toString()}
-          icon="👥"
-        />
-        <StatCard
-          title="Active Subscriptions"
-          value={stats.activeSubscriptions.toString()}
-          icon="💳"
-        />
-        <StatCard
-          title="Vouchers Redeemed"
-          value={stats.voucherRedemptions.toString()}
-          icon="🎟️"
-        />
-        <StatCard
-          title="Minutes Transcribed"
-          value={stats.totalMinutes.toLocaleString()}
-          icon="🎙️"
-        />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
+        <StatCard title="Users" value={stats.totalUsers.toString()} />
+        <StatCard title="Subscriptions" value={stats.activeSubscriptions.toString()} />
+        <StatCard title="Vouchers Redeemed" value={stats.voucherRedemptions.toString()} />
+        <StatCard title="Minutes" value={stats.totalMinutes.toLocaleString()} />
       </div>
 
       {/* Quick Actions */}
-      <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <h2 className="text-sm font-medium text-[var(--muted)] mb-3">Quick Actions</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <a
           href="/admin/vouchers"
-          className="p-4 bg-[var(--surface)] border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)] transition-colors"
+          className="p-3 bg-[var(--surface)] border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)] transition-colors"
         >
-          <div className="font-medium mb-1">Create Voucher</div>
-          <div className="text-sm text-[var(--muted)]">Generate new voucher codes for users</div>
+          <div className="text-sm font-medium mb-0.5">Create Voucher</div>
+          <div className="text-xs text-[var(--muted)]">Generate new codes</div>
         </a>
         <a
           href="/admin/users"
-          className="p-4 bg-[var(--surface)] border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)] transition-colors"
+          className="p-3 bg-[var(--surface)] border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)] transition-colors"
         >
-          <div className="font-medium mb-1">Manage Users</div>
-          <div className="text-sm text-[var(--muted)]">View and manage user accounts</div>
+          <div className="text-sm font-medium mb-0.5">Manage Users</div>
+          <div className="text-xs text-[var(--muted)]">View accounts</div>
         </a>
         <a
           href="/admin/transcribe"
-          className="p-4 bg-[var(--surface)] border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)] transition-colors"
+          className="p-3 bg-[var(--surface)] border border-[var(--border)] rounded-lg hover:bg-[var(--surface-hover)] transition-colors"
         >
-          <div className="font-medium mb-1">Test Transcription</div>
-          <div className="text-sm text-[var(--muted)]">Try the Soniox integration</div>
+          <div className="text-sm font-medium mb-0.5">Test Transcription</div>
+          <div className="text-xs text-[var(--muted)]">Try Soniox</div>
         </a>
       </div>
     </div>
   );
 }
 
-function StatCard({ title, value, icon }: { title: string; value: string; icon: string }) {
+function StatCard({ title, value }: { title: string; value: string }) {
   return (
-    <div className="p-6 bg-[var(--surface)] border border-[var(--border)] rounded-xl">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-2xl">{icon}</span>
-      </div>
-      <div className="text-3xl font-bold mb-1">{value}</div>
-      <div className="text-sm text-[var(--muted)]">{title}</div>
+    <div className="p-4 bg-[var(--surface)] border border-[var(--border)] rounded-lg">
+      <div className="text-2xl font-semibold mb-0.5">{value}</div>
+      <div className="text-xs text-[var(--muted)]">{title}</div>
     </div>
   );
 }

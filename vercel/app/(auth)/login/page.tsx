@@ -42,12 +42,12 @@ function LoginForm() {
   };
 
   return (
-    <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-8">
-      <h1 className="text-2xl font-bold mb-6 text-center">Sign In</h1>
+    <div className="bg-[var(--surface)] border border-[var(--border)] rounded-lg p-6 sm:p-8">
+      <h1 className="text-xl font-semibold mb-6 text-center">Sign In</h1>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-2">
+          <label htmlFor="email" className="block text-sm font-medium mb-1.5">
             Email
           </label>
           <input
@@ -56,13 +56,13 @@ function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+            className="w-full px-3 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent text-sm"
             placeholder="you@example.com"
           />
         </div>
         
         <div>
-          <label htmlFor="password" className="block text-sm font-medium mb-2">
+          <label htmlFor="password" className="block text-sm font-medium mb-1.5">
             Password
           </label>
           <input
@@ -71,13 +71,13 @@ function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
-            placeholder="••••••••"
+            className="w-full px-3 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent text-sm"
+            placeholder="Password"
           />
         </div>
         
         {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
             {error}
           </div>
         )}
@@ -85,13 +85,13 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
+          className="w-full py-2.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors text-sm"
         >
           {loading ? "Signing in..." : "Sign In"}
         </button>
       </form>
       
-      <p className="mt-6 text-center text-[var(--muted)] text-sm">
+      <p className="mt-5 text-center text-[var(--muted)] text-sm">
         Don&apos;t have an account?{" "}
         <Link href="/signup" className="text-[var(--accent)] hover:underline">
           Sign up
@@ -103,9 +103,9 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-sm">
       <Suspense fallback={
-        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-8 text-center">
+        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-lg p-6 sm:p-8 text-center text-sm">
           Loading...
         </div>
       }>

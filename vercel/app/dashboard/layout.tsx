@@ -20,26 +20,26 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="border-b border-[var(--border)] px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link href="/dashboard" className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+      <header className="border-b border-[var(--border)] px-4 sm:px-6 py-3">
+        <div className="w-full max-w-xl mx-auto flex items-center justify-between">
+          <Link href="/dashboard" className="text-lg font-semibold text-[var(--foreground)]">
             Ramble
           </Link>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             {!access.hasAccess && (
               <Link
                 href="/dashboard/redeem"
-                className="text-sm text-[var(--accent)] hover:underline"
+                className="text-sm text-[var(--accent)] hover:underline hidden sm:inline"
               >
-                Redeem Voucher
+                Redeem
               </Link>
             )}
-            <span className="text-sm text-[var(--muted)]">{user.email}</span>
+            <span className="text-sm text-[var(--muted)] hidden sm:inline truncate max-w-[150px]">{user.email}</span>
             <form action="/api/auth/logout" method="POST">
               <button
                 type="submit"
-                className="text-sm text-[var(--muted)] hover:text-white transition-colors"
+                className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
               >
                 Sign out
               </button>
@@ -50,14 +50,14 @@ export default async function DashboardLayout({
 
       {/* Access Warning */}
       {!access.hasAccess && (
-        <div className="bg-yellow-500/10 border-b border-yellow-500/20 px-6 py-3">
-          <div className="max-w-5xl mx-auto flex items-center justify-between">
-            <span className="text-yellow-400 text-sm">
-              You need a subscription or voucher to use transcription.
+        <div className="bg-amber-50 border-b border-amber-200 px-4 sm:px-6 py-2">
+          <div className="w-full max-w-xl mx-auto flex items-center justify-between gap-2">
+            <span className="text-amber-700 text-sm">
+              Access required for transcription.
             </span>
             <Link
               href="/dashboard/redeem"
-              className="px-4 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 text-sm font-medium rounded transition-colors"
+              className="px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 text-sm font-medium rounded transition-colors whitespace-nowrap"
             >
               Redeem Voucher
             </Link>
@@ -66,8 +66,8 @@ export default async function DashboardLayout({
       )}
 
       {/* Content */}
-      <main className="flex-1 p-6">
-        <div className="max-w-5xl mx-auto">
+      <main className="flex-1 px-4 sm:px-6 py-6">
+        <div className="w-full max-w-xl mx-auto">
           {children}
         </div>
       </main>

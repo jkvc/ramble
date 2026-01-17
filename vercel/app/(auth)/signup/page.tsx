@@ -56,17 +56,16 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="w-full max-w-md">
-        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-8 text-center">
-          <div className="text-4xl mb-4">📧</div>
-          <h1 className="text-2xl font-bold mb-4">Check your email</h1>
-          <p className="text-[var(--muted)]">
-            We&apos;ve sent a confirmation link to <strong>{email}</strong>.
+      <div className="w-full max-w-sm">
+        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-lg p-6 sm:p-8 text-center">
+          <h1 className="text-xl font-semibold mb-3">Check your email</h1>
+          <p className="text-sm text-[var(--muted)]">
+            We&apos;ve sent a confirmation link to <strong className="text-[var(--foreground)]">{email}</strong>.
             Click the link to verify your account.
           </p>
           <button
             onClick={() => router.push("/login")}
-            className="mt-6 px-6 py-2 bg-[var(--surface-hover)] hover:bg-[var(--border)] rounded-lg transition-colors"
+            className="mt-5 px-4 py-2 bg-[var(--surface-hover)] hover:bg-[var(--border)] rounded-lg transition-colors text-sm"
           >
             Back to login
           </button>
@@ -76,13 +75,13 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="w-full max-w-md">
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-8">
-        <h1 className="text-2xl font-bold mb-6 text-center">Create Account</h1>
+    <div className="w-full max-w-sm">
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-lg p-6 sm:p-8">
+        <h1 className="text-xl font-semibold mb-6 text-center">Create Account</h1>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">
+            <label htmlFor="email" className="block text-sm font-medium mb-1.5">
               Email
             </label>
             <input
@@ -91,13 +90,13 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+              className="w-full px-3 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent text-sm"
               placeholder="you@example.com"
             />
           </div>
           
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-2">
+            <label htmlFor="password" className="block text-sm font-medium mb-1.5">
               Password
             </label>
             <input
@@ -106,13 +105,13 @@ export default function SignupPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
-              placeholder="••••••••"
+              className="w-full px-3 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent text-sm"
+              placeholder="Password"
             />
           </div>
           
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
+            <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1.5">
               Confirm Password
             </label>
             <input
@@ -121,13 +120,13 @@ export default function SignupPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
-              placeholder="••••••••"
+              className="w-full px-3 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent text-sm"
+              placeholder="Confirm password"
             />
           </div>
           
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
               {error}
             </div>
           )}
@@ -135,13 +134,13 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
+            className="w-full py-2.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors text-sm"
           >
             {loading ? "Creating account..." : "Create Account"}
           </button>
         </form>
         
-        <p className="mt-6 text-center text-[var(--muted)] text-sm">
+        <p className="mt-5 text-center text-[var(--muted)] text-sm">
           Already have an account?{" "}
           <Link href="/login" className="text-[var(--accent)] hover:underline">
             Sign in
