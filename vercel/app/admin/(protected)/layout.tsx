@@ -12,7 +12,7 @@ export default async function AdminProtectedLayout({
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user || !isAdmin(user.email)) {
-    redirect("/admin/login");
+    redirect("/login");
   }
 
   return (

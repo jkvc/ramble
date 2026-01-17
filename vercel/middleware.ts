@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
   const { user, supabaseResponse } = await updateSession(request);
 
   // Public routes - no protection needed
-  const publicRoutes = ["/", "/login", "/signup", "/admin/login", "/auth/callback"];
+  const publicRoutes = ["/", "/login", "/signup", "/auth/callback"];
   if (publicRoutes.includes(pathname)) {
     return supabaseResponse;
   }
@@ -22,22 +22,22 @@ export async function middleware(request: NextRequest) {
       url.searchParams.set("redirect", pathname);
       return NextResponse.redirect(url);
     }
-    // Access check (subscription/voucher) happens in the layout
     return supabaseResponse;
   }
 
-  // Protect /admin/* routes (except /admin/login)
-  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+  // Protect /admin/* routes - admins use regular login
+  if (pathname.startsWith("/admin")) {
     if (!user) {
       const url = request.nextUrl.clone();
-      url.pathname = "/admin/login";
+      url.pathname = "/login";
+      url.searchParams.set("redirect", pathname);
       return NextResponse.redirect(url);
     }
 
     // Check if user is admin
     if (!isAdmin(user.email)) {
       const url = request.nextUrl.clone();
-      url.pathname = "/";
+      url.pathname = "/dashboard";
       return NextResponse.redirect(url);
     }
 
@@ -51,8 +51,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Protect admin API routes (except check-email which is public)
-  if (pathname.startsWith("/api/admin") && pathname !== "/api/admin/check-email") {
+  // Protect admin API routes
+  if (pathname.startsWith("/api/admin")) {
     if (!user || !isAdmin(user.email)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

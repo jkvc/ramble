@@ -10,7 +10,7 @@ Backend and admin portal for Ramble, powered by Next.js, Supabase, and Soniox.
 - Voucher redemption for access
 
 ### Admin
-- Magic link authentication (email whitelist)
+- Same login as users (email whitelist in `ADMIN_EMAILS` env var)
 - User management
 - Voucher creation and management
 - Transcription testing tool
@@ -49,4 +49,4 @@ The `TranscriptionTool` component handles:
 
 **Users**: Sign up → Verify email → Redeem voucher → Use transcription
 
-**Admins**: Go to `/admin/login` → Enter whitelisted email → Click magic link → Access admin tools
+**Admins**: Sign up/login with whitelisted email → Go to `/admin` → Access admin tools
