@@ -1,11 +1,37 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { checkAccess } from "@/lib/access";
 import { isAdmin } from "@/lib/admin";
 
-export async function POST() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export async function POST(request: Request) {
+  // Check for Bearer token (mobile app) or cookie session (web)
+  const authHeader = request.headers.get("authorization");
+  
+  let user;
+  let supabase;
+  
+  if (authHeader?.startsWith("Bearer ")) {
+    // Mobile app with access token
+    const accessToken = authHeader.substring(7);
+    
+    // Create a Supabase client and set the session
+    supabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    
+    const { data: userData, error } = await supabase.auth.getUser(accessToken);
+    if (error || !userData.user) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+    user = userData.user;
+  } else {
+    // Web with cookie session
+    supabase = await createClient();
+    const { data: { user: sessionUser } } = await supabase.auth.getUser();
+    user = sessionUser;
+  }
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
