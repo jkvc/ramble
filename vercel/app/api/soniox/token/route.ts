@@ -8,10 +8,13 @@ export async function POST(request: Request) {
   // Check for Bearer token (mobile app) or cookie session (web)
   const authHeader = request.headers.get("authorization");
   
+  console.log("[soniox/token] authHeader:", authHeader);
+  
   let user;
   let supabase;
   
   if (authHeader?.startsWith("Bearer ")) {
+    console.log("[soniox/token] Using Bearer token auth");
     // Mobile app with access token
     const accessToken = authHeader.substring(7);
     
@@ -22,12 +25,14 @@ export async function POST(request: Request) {
     );
     
     const { data: userData, error } = await supabase.auth.getUser(accessToken);
+    console.log("[soniox/token] getUser result:", { user: userData?.user?.email, error: error?.message });
     if (error || !userData.user) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
     user = userData.user;
   } else {
     // Web with cookie session
+    console.log("[soniox/token] Using cookie session auth");
     supabase = await createClient();
     const { data: { user: sessionUser } } = await supabase.auth.getUser();
     user = sessionUser;
