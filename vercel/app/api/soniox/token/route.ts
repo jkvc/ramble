@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { checkAccess } from "@/lib/access";
 import { isAdmin } from "@/lib/admin";
@@ -8,34 +8,33 @@ export async function POST(request: Request) {
   // Check for Bearer token (mobile app) or cookie session (web)
   const authHeader = request.headers.get("authorization");
   
-  console.log("[soniox/token] authHeader:", authHeader);
-  
   let user;
-  let supabase;
+  let supabaseForAccess; // Client to use for access checks
   
   if (authHeader?.startsWith("Bearer ")) {
-    console.log("[soniox/token] Using Bearer token auth");
     // Mobile app with access token
     const accessToken = authHeader.substring(7);
     
-    // Create a Supabase client and set the session
-    supabase = createSupabaseClient(
+    // Create a Supabase client to verify the token
+    const supabase = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
     
     const { data: userData, error } = await supabase.auth.getUser(accessToken);
-    console.log("[soniox/token] getUser result:", { user: userData?.user?.email, error: error?.message });
     if (error || !userData.user) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
     user = userData.user;
+    
+    // Use service client for access checks (bypasses RLS)
+    supabaseForAccess = await createServiceClient();
   } else {
     // Web with cookie session
-    console.log("[soniox/token] Using cookie session auth");
-    supabase = await createClient();
+    const supabase = await createClient();
     const { data: { user: sessionUser } } = await supabase.auth.getUser();
     user = sessionUser;
+    supabaseForAccess = supabase;
   }
 
   if (!user) {
@@ -43,7 +42,7 @@ export async function POST(request: Request) {
   }
 
   // Check access (admin, subscription, or voucher)
-  const access = await checkAccess(user.id, user.email, supabase);
+  const access = await checkAccess(user.id, user.email, supabaseForAccess);
 
   if (!access.hasAccess && !isAdmin(user.email)) {
     return NextResponse.json({ 
