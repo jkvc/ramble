@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ramble</string>
+    <string name="ime_name">Ramble Voice</string>
+    <string name="ime_subtype_label">Voice Input</string>
+</resources>

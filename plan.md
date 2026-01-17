@@ -41,10 +41,10 @@ pnpm dev
 ```
 
 ### Step 4: Test Admin Access
-1. Go to `/admin/login`
-2. Enter your admin email (must be in `ADMIN_EMAILS`)
-3. Check your email for the magic link
-4. Click link → you're logged in as admin
+1. Go to `/signup` and create an account with an email in `ADMIN_EMAILS`
+2. Verify your email
+3. Go to `/login` and sign in
+4. Navigate to `/admin` → you'll have admin access
 5. Create a voucher in `/admin/vouchers`
 
 ### Step 5: Test User Flow
@@ -212,49 +212,49 @@ This test platform serves as:
 
 ---
 
-### Phase 2: Android IME Development
+### Phase 2: Android IME Development (In Progress)
 **Duration: 3-4 weeks**
 
 With the backend fully working and Soniox integration validated in browser, build the Android keyboard.
 
-#### 2.1 Android Project Setup
-- [ ] Initialize Android project in `/android`
-- [ ] Configure Gradle (Kotlin, dependencies)
-- [ ] Set up InputMethodService boilerplate
-- [ ] Configure AndroidManifest.xml with IME declarations
+#### 2.1 Android Project Setup ✅
+- [x] Initialize Android project in `/android`
+- [x] Configure Gradle (Kotlin 2.0, AGP 8.7, Compose BOM)
+- [x] Set up InputMethodService boilerplate
+- [x] Configure AndroidManifest.xml with IME declarations
 
-#### 2.2 Keyboard UI (Record Button Only - MVP)
-- [ ] Custom keyboard view layout
-- [ ] Large, prominent record toggle button
-- [ ] Recording state indicators (idle, recording, processing)
-- [ ] Microphone permission request flow
+#### 2.2 Keyboard UI (Record Button Only - MVP) ✅
+- [x] Custom keyboard view layout (Jetpack Compose)
+- [x] Large, prominent record toggle button
+- [x] Recording state indicators (idle, recording, processing)
+- [x] Microphone permission request flow
 
-#### 2.3 Audio Capture
-- [ ] Implement `AudioRecord` for raw PCM capture
-- [ ] Configure: 16kHz sample rate, mono, 16-bit PCM
-- [ ] Buffer management for low-latency streaming
+#### 2.3 Audio Capture ✅
+- [x] Implement `AudioRecord` for raw PCM capture
+- [x] Configure: 16kHz sample rate, mono, 16-bit PCM
+- [x] Buffer management for low-latency streaming
 - [ ] Handle audio focus and interruptions
 
-#### 2.4 Backend Integration
-- [ ] API client for Vercel backend
-- [ ] Supabase Auth integration for Android
-- [ ] Token storage (secure storage)
+#### 2.4 Backend Integration ✅
+- [x] API client for Vercel backend
+- [x] Auth via backend login endpoint
+- [x] Token storage (EncryptedSharedPreferences)
 - [ ] Refresh token handling
 
-#### 2.5 Soniox WebSocket Client
-- [ ] WebSocket connection management
-- [ ] Audio chunk streaming
-- [ ] Token parsing (non-final vs final)
-- [ ] Error handling and reconnection
+#### 2.5 Soniox WebSocket Client ✅
+- [x] WebSocket connection management (OkHttp)
+- [x] Audio chunk streaming
+- [x] Token parsing (fw/nfw format)
+- [x] Error handling and reconnection
 
-#### 2.6 Text Insertion
-- [ ] Use `InputConnection.setComposingText()` for provisional tokens
-- [ ] Use `InputConnection.commitText()` for final tokens
-- [ ] Handle cursor position
-- [ ] Handle text field switching
+#### 2.6 Text Insertion ✅
+- [x] Use `InputConnection.setComposingText()` for provisional tokens
+- [x] Use `InputConnection.commitText()` for final tokens
+- [x] Handle cursor position
+- [x] Finish composing text on disconnect
 
 #### 2.7 Testing
-- [ ] Test on various Android versions (10, 11, 12, 13, 14)
+- [ ] Test on various Android versions (12, 13, 14, 15)
 - [ ] Test with different apps (messaging, email, notes)
 - [ ] Test network conditions (WiFi, cellular, poor connection)
 - [ ] Test permission flows
@@ -657,26 +657,22 @@ All Phase 1 deliverables are working:
 - Voucher creation and redemption
 - Soniox real-time transcription (multi-language)
 
-### Up Next: Phase 2 - Android IME
+### Current Status: Phase 2 - Android IME (In Progress)
 
-1. **Set up Android project**
-   - Initialize Kotlin project in `/android`
-   - Configure Gradle with dependencies
-   - Set up InputMethodService boilerplate
+**Completed:**
+- ✅ Android project setup (Kotlin, Jetpack Compose, Gradle 8.7)
+- ✅ Companion app with login and transcription testing
+- ✅ Audio capture via `AudioRecord` (16kHz, mono, 16-bit PCM)
+- ✅ Soniox WebSocket client (stt-rt-v3 model, multi-language)
+- ✅ Backend authentication via Bearer token
+- ✅ Real-time transcription working in companion app
 
-2. **Build keyboard UI**
-   - Record toggle button
-   - Recording state indicators
-   - Permission request flow
-
-3. **Port Soniox integration**
-   - Use `TranscriptionTool.tsx` as reference
-   - WebSocket client for Android
-   - Audio capture via `AudioRecord`
-
-4. **Text insertion**
-   - `InputConnection.setComposingText()` for provisional
-   - `InputConnection.commitText()` for final
+**Up Next:**
+1. Test keyboard as an Input Method (IME)
+2. Test on various Android versions and apps
+3. Handle audio focus and interruptions
+4. Add refresh token handling
+5. Polish keyboard UI
 
 ---
 
