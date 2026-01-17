@@ -44,11 +44,10 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // Protect API routes that require auth
-  if (pathname.startsWith("/api/soniox") || pathname.startsWith("/api/vouchers/redeem")) {
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  // API routes that handle their own auth (support both cookie and Bearer token)
+  // Skip middleware protection - let the route handler do it
+  if (pathname.startsWith("/api/soniox") || pathname.startsWith("/api/vouchers/redeem") || pathname.startsWith("/api/auth/login")) {
+    return supabaseResponse;
   }
 
   // Protect admin API routes
