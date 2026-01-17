@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Run build in vercel directory to catch errors before pushing
+# Use a separate output directory to avoid interfering with dev server
+cd vercel
+NEXT_BUILD_DIR=.next-prepush pnpm build
+
+# Clean up the temporary build directory
+rm -rf .next-prepush

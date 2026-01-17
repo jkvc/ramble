@@ -63,11 +63,21 @@ export async function checkAccess(
     .maybeSingle();
 
   if (redemption) {
+    // Supabase returns the joined voucher as an object (single) or array (multiple)
+    const vouchers = redemption.vouchers as unknown;
+    let voucherCode = "unknown";
+    if (vouchers && typeof vouchers === "object") {
+      if (Array.isArray(vouchers) && vouchers.length > 0) {
+        voucherCode = (vouchers[0] as { code: string }).code;
+      } else if ("code" in vouchers) {
+        voucherCode = (vouchers as { code: string }).code;
+      }
+    }
     return {
       hasAccess: true,
       reason: "voucher",
       voucher: {
-        code: (redemption.vouchers as { code: string })?.code ?? "unknown",
+        code: voucherCode,
         redeemedAt: redemption.redeemed_at,
       },
     };
