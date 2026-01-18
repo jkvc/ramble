@@ -45,6 +45,8 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
     const [provisional, setProvisional] = useState("");
     // Track cursor position for inserting transcribed text
     const [cursorPosition, setCursorPosition] = useState(0);
+    // Ref to always have the latest cursor position in callbacks
+    const cursorPositionRef = useRef(0);
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const wsRef = useRef<WebSocket | null>(null);
@@ -52,6 +54,11 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
     const audioContextRef = useRef<AudioContext | null>(null);
     const processorRef = useRef<ScriptProcessorNode | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
+
+    // Keep cursor position ref in sync
+    useEffect(() => {
+        cursorPositionRef.current = cursorPosition;
+    }, [cursorPosition]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -63,13 +70,17 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
     // Keep cursor position synced
     const handleSelect = useCallback(() => {
         if (textareaRef.current) {
-            setCursorPosition(textareaRef.current.selectionEnd);
+            const pos = textareaRef.current.selectionEnd;
+            setCursorPosition(pos);
+            cursorPositionRef.current = pos;
         }
     }, []);
 
     const handleTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setText(e.target.value);
-        setCursorPosition(e.target.selectionEnd);
+        const pos = e.target.selectionEnd;
+        setCursorPosition(pos);
+        cursorPositionRef.current = pos;
     }, []);
 
     const startRecording = useCallback(async () => {
@@ -156,23 +167,24 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
                         }
 
                         if (finalText) {
-                            // Insert final text at cursor position
+                            // Insert final text at cursor position (use ref for latest value)
+                            const pos = cursorPositionRef.current;
                             setText(prev => {
-                                const before = prev.slice(0, cursorPosition);
-                                const after = prev.slice(cursorPosition);
-                                const newText = before + finalText + after;
-                                // Update cursor position after insertion
-                                const newPos = cursorPosition + finalText.length;
-                                setCursorPosition(newPos);
-                                // Schedule cursor restoration
-                                setTimeout(() => {
-                                    if (textareaRef.current) {
-                                        textareaRef.current.selectionStart = newPos;
-                                        textareaRef.current.selectionEnd = newPos;
-                                    }
-                                }, 0);
-                                return newText;
+                                const before = prev.slice(0, pos);
+                                const after = prev.slice(pos);
+                                return before + finalText + after;
                             });
+                            // Update cursor position after insertion
+                            const newPos = pos + finalText.length;
+                            setCursorPosition(newPos);
+                            cursorPositionRef.current = newPos;
+                            // Schedule cursor restoration
+                            setTimeout(() => {
+                                if (textareaRef.current) {
+                                    textareaRef.current.selectionStart = newPos;
+                                    textareaRef.current.selectionEnd = newPos;
+                                }
+                            }, 0);
                             setProvisional(nonFinalText);
                         } else if (nonFinalText) {
                             setProvisional(nonFinalText);
@@ -182,20 +194,21 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
                     else if (message.fw && message.fw.length > 0) {
                         const finalText = filterSpecialTokens(message.fw.map(w => w.t).join(""));
                         if (finalText) {
+                            const pos = cursorPositionRef.current;
                             setText(prev => {
-                                const before = prev.slice(0, cursorPosition);
-                                const after = prev.slice(cursorPosition);
-                                const newText = before + finalText + after;
-                                const newPos = cursorPosition + finalText.length;
-                                setCursorPosition(newPos);
-                                setTimeout(() => {
-                                    if (textareaRef.current) {
-                                        textareaRef.current.selectionStart = newPos;
-                                        textareaRef.current.selectionEnd = newPos;
-                                    }
-                                }, 0);
-                                return newText;
+                                const before = prev.slice(0, pos);
+                                const after = prev.slice(pos);
+                                return before + finalText + after;
                             });
+                            const newPos = pos + finalText.length;
+                            setCursorPosition(newPos);
+                            cursorPositionRef.current = newPos;
+                            setTimeout(() => {
+                                if (textareaRef.current) {
+                                    textareaRef.current.selectionStart = newPos;
+                                    textareaRef.current.selectionEnd = newPos;
+                                }
+                            }, 0);
                             setProvisional("");
                         }
                     }
@@ -223,7 +236,7 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
             setError(err instanceof Error ? err.message : "Failed to start recording");
             setIsConnecting(false);
         }
-    }, [hasAccess, cursorPosition]);
+    }, [hasAccess]);
 
     const startAudioCapture = (stream: MediaStream, ws: WebSocket) => {
         // Use MediaRecorder to produce webm/opus format (works with audio_format: "auto")
@@ -281,18 +294,21 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
 
         // Commit any provisional text at cursor position
         if (provisional) {
+            const pos = cursorPositionRef.current;
             setText(prev => {
-                const before = prev.slice(0, cursorPosition);
-                const after = prev.slice(cursorPosition);
+                const before = prev.slice(0, pos);
+                const after = prev.slice(pos);
                 return before + provisional + after;
             });
-            setCursorPosition(prev => prev + provisional.length);
+            const newPos = pos + provisional.length;
+            setCursorPosition(newPos);
+            cursorPositionRef.current = newPos;
             setProvisional("");
         }
 
         setIsRecording(false);
         setIsConnecting(false);
-    }, [provisional, cursorPosition]);
+    }, [provisional]);
 
     const toggleRecording = () => {
         if (isRecording) {
