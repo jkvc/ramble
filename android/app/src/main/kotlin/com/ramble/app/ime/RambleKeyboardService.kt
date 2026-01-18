@@ -1,18 +1,23 @@
 package com.ramble.app.ime
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.inputmethodservice.InputMethodService
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import androidx.compose.runtime.*
-import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.AbstractComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
@@ -22,6 +27,7 @@ import com.ramble.app.audio.AudioRecorder
 import com.ramble.app.soniox.SonioxWebSocketClient
 import com.ramble.app.ui.theme.RambleTheme
 import kotlinx.coroutines.*
+import kotlinx.coroutines.delay
 
 /**
  * Ramble Voice Keyboard - InputMethodService
@@ -29,13 +35,15 @@ import kotlinx.coroutines.*
  * Provides a record button for voice-to-text transcription.
  * Text is inserted directly into the active text field.
  */
-class RambleKeyboardService : InputMethodService(), LifecycleOwner, SavedStateRegistryOwner {
+class RambleKeyboardService : InputMethodService(), LifecycleOwner, SavedStateRegistryOwner, ViewModelStoreOwner {
     
     private val lifecycleRegistry = LifecycleRegistry(this)
     private val savedStateRegistryController = SavedStateRegistryController.create(this)
+    private val store = ViewModelStore()
     
     override val lifecycle: Lifecycle = lifecycleRegistry
     override val savedStateRegistry: SavedStateRegistry = savedStateRegistryController.savedStateRegistry
+    override val viewModelStore: ViewModelStore = store
     
     private val sonioxClient = SonioxWebSocketClient()
     private val audioRecorder = AudioRecorder()
@@ -45,6 +53,8 @@ class RambleKeyboardService : InputMethodService(), LifecycleOwner, SavedStateRe
     private var isConnecting = mutableStateOf(false)
     private var error = mutableStateOf<String?>(null)
     private var provisional = mutableStateOf("")
+    private var isPendingDisconnect = false
+    private var disconnectJob: kotlinx.coroutines.Job? = null
     
     override fun onCreate() {
         super.onCreate()
@@ -67,6 +77,11 @@ class RambleKeyboardService : InputMethodService(), LifecycleOwner, SavedStateRe
                         // Insert final text into the text field
                         currentInputConnection?.commitText(event.text, 1)
                         provisional.value = ""
+                        
+                        // If we're pending disconnect and got final words, schedule disconnect
+                        if (isPendingDisconnect) {
+                            scheduleDisconnect()
+                        }
                     }
                     is SonioxWebSocketClient.Event.ProvisionalWords -> {
                         // Show provisional text as composing
@@ -87,7 +102,10 @@ class RambleKeyboardService : InputMethodService(), LifecycleOwner, SavedStateRe
     
     override fun onStartInputView(editorInfo: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(editorInfo, restarting)
-        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+        // Ensure lifecycle is resumed when input view starts
+        if (lifecycleRegistry.currentState != Lifecycle.State.RESUMED) {
+            lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+        }
     }
     
     override fun onFinishInputView(finishingInput: Boolean) {
@@ -107,27 +125,27 @@ class RambleKeyboardService : InputMethodService(), LifecycleOwner, SavedStateRe
     }
     
     override fun onCreateInputView(): View {
+        // Lifecycle must be RESUMED before Compose can work
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         
-        val view = ComposeView(this).apply {
-            setViewTreeLifecycleOwner(this@RambleKeyboardService)
-            setViewTreeSavedStateRegistryOwner(this@RambleKeyboardService)
-            
-            setContent {
-                RambleTheme {
-                    KeyboardView(
-                        isRecording = isRecording.value,
-                        isConnecting = isConnecting.value,
-                        error = error.value,
-                        isLoggedIn = RambleApp.instance.authManager.isLoggedIn,
-                        onRecordClick = { toggleRecording() },
-                        onSettingsClick = { openSettings() },
-                        onKeyClick = { key -> commitText(key) },
-                        onBackspace = { deleteBackward() },
-                        onEnter = { sendEnter() },
-                        onSpace = { commitText(" ") }
-                    )
-                }
+        // Use custom ComposeView that sets up its own lifecycle before attaching
+        val view = ImeComposeView(this, this@RambleKeyboardService)
+        
+        view.setContent {
+            RambleTheme {
+                KeyboardView(
+                    isRecording = isRecording.value,
+                    isConnecting = isConnecting.value,
+                    error = error.value,
+                    isLoggedIn = RambleApp.instance.authManager.isLoggedIn,
+                    onRecordClick = { toggleRecording() },
+                    onSettingsClick = { openSettings() },
+                    onKeyClick = { key -> commitText(key) },
+                    onBackspace = { deleteBackward() },
+                    onEnter = { sendEnter() },
+                    onSpace = { commitText(" ") }
+                )
             }
         }
         
@@ -177,14 +195,50 @@ class RambleKeyboardService : InputMethodService(), LifecycleOwner, SavedStateRe
     }
     
     private fun stopRecording() {
+        val wasRecording = isRecording.value
         isRecording.value = false
         isConnecting.value = false
+        
+        // Stop audio capture immediately
         audioRecorder.stop()
+        
+        if (wasRecording) {
+            // Don't disconnect immediately - wait for remaining tokens
+            isPendingDisconnect = true
+            // Schedule disconnect after a delay to allow remaining tokens to arrive
+            scheduleDisconnect()
+        } else {
+            // Not recording, just disconnect
+            sonioxClient.disconnect()
+            currentInputConnection?.finishComposingText()
+            provisional.value = ""
+        }
+    }
+    
+    private fun scheduleDisconnect() {
+        // Cancel any existing disconnect job
+        disconnectJob?.cancel()
+        
+        // Wait 500ms for any remaining tokens, then disconnect
+        disconnectJob = scope.launch {
+            delay(500)
+            finalizeDisconnect()
+        }
+    }
+    
+    private fun finalizeDisconnect() {
+        isPendingDisconnect = false
+        disconnectJob?.cancel()
+        disconnectJob = null
+        
         sonioxClient.disconnect()
         
         // Finish any composing text
         currentInputConnection?.finishComposingText()
         provisional.value = ""
+        
+        // Insert a space so next recording doesn't stick to previous word
+        currentInputConnection?.commitText(" ", 1)
     }
     
     private fun openSettings() {
