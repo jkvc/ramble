@@ -31,9 +31,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TranscribeScreen(
-    onLogout: () -> Unit
-) {
+fun TranscribeScreen() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     
@@ -42,8 +40,6 @@ fun TranscribeScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var transcript by remember { mutableStateOf("") }
     var provisional by remember { mutableStateOf("") }
-    
-    val user by RambleApp.instance.authManager.currentUser.collectAsState()
     
     var hasPermission by remember {
         mutableStateOf(
@@ -113,20 +109,9 @@ fun TranscribeScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Ramble",
-                        color = MaterialTheme.colorScheme.primary
+                        "Transcribe",
+                        color = MaterialTheme.colorScheme.onBackground
                     )
-                },
-                actions = {
-                    Text(
-                        text = user?.email ?: "",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-                    TextButton(onClick = onLogout) {
-                        Text("Sign out")
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background

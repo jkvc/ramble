@@ -189,7 +189,8 @@ class RambleKeyboardService : InputMethodService(), LifecycleOwner, SavedStateRe
     
     private fun openSettings() {
         val intent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra("start_destination", "settings")
         }
         intent?.let { startActivity(it) }
     }
