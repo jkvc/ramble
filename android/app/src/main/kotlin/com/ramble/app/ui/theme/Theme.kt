@@ -1,34 +1,34 @@
 package com.ramble.app.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF6366F1),       // Accent purple
+// Light theme colors matching web app's minimalistic bright theme
+private val LightColorScheme = lightColorScheme(
+    primary = Color(0xFF2563EB),        // Blue accent (matches web --accent)
     onPrimary = Color.White,
-    primaryContainer = Color(0xFF4F46E5),
-    secondary = Color(0xFF818CF8),
-    background = Color(0xFF0A0A0B),     // Dark background
-    surface = Color(0xFF18181B),        // Surface/card
-    surfaceVariant = Color(0xFF27272A), // Border color
-    onBackground = Color(0xFFFAFAFA),   // Text
-    onSurface = Color(0xFFFAFAFA),
-    onSurfaceVariant = Color(0xFFA1A1AA), // Muted text
-    error = Color(0xFFEF4444),
-    outline = Color(0xFF3F3F46),
+    primaryContainer = Color(0xFF1D4ED8), // Darker blue for hover
+    secondary = Color(0xFF6B7280),       // Muted gray
+    background = Color(0xFFFFFFFF),      // White background (matches web --background)
+    surface = Color(0xFFF8F9FA),         // Light gray surface (matches web --surface)
+    surfaceVariant = Color(0xFFF1F3F5),  // Surface hover
+    onBackground = Color(0xFF1A1A1A),    // Dark text (matches web --foreground)
+    onSurface = Color(0xFF1A1A1A),
+    onSurfaceVariant = Color(0xFF6B7280), // Muted text (matches web --muted)
+    error = Color(0xFFDC2626),           // Error red (matches web --error)
+    outline = Color(0xFFE5E7EB),         // Border color (matches web --border)
+    outlineVariant = Color(0xFFE5E7EB),
 )
 
 @Composable
 fun RambleTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    // Always use dark theme to match web
+    // Use light theme to match web's minimalistic bright design
     MaterialTheme(
-        colorScheme = DarkColorScheme,
+        colorScheme = LightColorScheme,
         content = content
     )
 }

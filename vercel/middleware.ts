@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
 
     // API routes that handle their own auth (support both cookie and Bearer token)
     // Skip middleware protection - let the route handler do it
-    if (pathname.startsWith("/api/soniox") || pathname.startsWith("/api/vouchers/redeem") || pathname.startsWith("/api/auth/login")) {
+    if (pathname.startsWith("/api/soniox") || pathname.startsWith("/api/vouchers/redeem") || pathname.startsWith("/api/auth/login") || pathname.startsWith("/api/auth/refresh")) {
         return supabaseResponse;
     }
 

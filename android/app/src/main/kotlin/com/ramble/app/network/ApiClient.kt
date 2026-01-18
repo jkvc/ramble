@@ -44,6 +44,11 @@ data class SonioxTokenResponse(
 )
 
 @Serializable
+data class RefreshRequest(
+    val refresh_token: String
+)
+
+@Serializable
 data class ErrorResponse(
     val error: String
 )
@@ -106,6 +111,29 @@ object ApiClient {
     
     suspend fun getSonioxToken(): Result<SonioxTokenResponse> = withContext(Dispatchers.IO) {
         try {
+            val result = getSonioxTokenInternal()
+            
+            // If we get "Invalid token", try to refresh and retry once
+            if (result.isFailure && result.exceptionOrNull()?.message == "Invalid token") {
+                val refreshResult = refreshToken()
+                if (refreshResult.isSuccess) {
+                    // Retry with new token
+                    return@withContext getSonioxTokenInternal()
+                } else {
+                    // Refresh failed, log out user
+                    RambleApp.instance.authManager.logout()
+                    return@withContext Result.failure(Exception("Session expired. Please log in again."))
+                }
+            }
+            
+            result
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    private suspend fun getSonioxTokenInternal(): Result<SonioxTokenResponse> = withContext(Dispatchers.IO) {
+        try {
             val accessToken = RambleApp.instance.authManager.getAccessToken()
                 ?: return@withContext Result.failure(Exception("Not authenticated"))
             
@@ -127,6 +155,49 @@ object ApiClient {
                     json.decodeFromString<ErrorResponse>(body)
                 } catch (e: Exception) {
                     ErrorResponse("Failed to get token")
+                }
+                Result.failure(Exception(errorResponse.error))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    private suspend fun refreshToken(): Result<User> = withContext(Dispatchers.IO) {
+        try {
+            val currentUser = RambleApp.instance.authManager.currentUser.value
+                ?: return@withContext Result.failure(Exception("Not authenticated"))
+            
+            val requestBody = json.encodeToString(
+                RefreshRequest.serializer(), 
+                RefreshRequest(currentUser.refreshToken)
+            )
+            
+            val request = Request.Builder()
+                .url("$baseUrl/api/auth/refresh")
+                .post(requestBody.toRequestBody(jsonMediaType))
+                .header("Content-Type", "application/json")
+                .build()
+            
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: ""
+            
+            if (response.isSuccessful) {
+                val loginResponse = json.decodeFromString<LoginResponse>(body)
+                val newUser = User(
+                    id = loginResponse.user.id,
+                    email = loginResponse.user.email,
+                    accessToken = loginResponse.session.access_token,
+                    refreshToken = loginResponse.session.refresh_token
+                )
+                // Save the new tokens
+                RambleApp.instance.authManager.saveUser(newUser)
+                Result.success(newUser)
+            } else {
+                val errorResponse = try {
+                    json.decodeFromString<ErrorResponse>(body)
+                } catch (e: Exception) {
+                    ErrorResponse("Refresh failed")
                 }
                 Result.failure(Exception(errorResponse.error))
             }
