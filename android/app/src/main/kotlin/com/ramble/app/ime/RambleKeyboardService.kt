@@ -121,13 +121,29 @@ class RambleKeyboardService : InputMethodService(), LifecycleOwner, SavedStateRe
                         error = error.value,
                         isLoggedIn = RambleApp.instance.authManager.isLoggedIn,
                         onRecordClick = { toggleRecording() },
-                        onSettingsClick = { openSettings() }
+                        onSettingsClick = { openSettings() },
+                        onKeyClick = { key -> commitText(key) },
+                        onBackspace = { deleteBackward() },
+                        onEnter = { sendEnter() },
+                        onSpace = { commitText(" ") }
                     )
                 }
             }
         }
         
         return view
+    }
+    
+    private fun commitText(text: String) {
+        currentInputConnection?.commitText(text, 1)
+    }
+    
+    private fun deleteBackward() {
+        currentInputConnection?.deleteSurroundingText(1, 0)
+    }
+    
+    private fun sendEnter() {
+        currentInputConnection?.commitText("\n", 1)
     }
     
     private fun toggleRecording() {
