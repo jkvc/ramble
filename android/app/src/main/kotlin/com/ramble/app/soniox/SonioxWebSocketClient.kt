@@ -69,8 +69,18 @@ class SonioxWebSocketClient {
   private var webSocket: WebSocket? = null
   private var isConnected = false
 
+  // Buffer for audio recorded while connecting
+  private val audioBuffer = mutableListOf<ByteArray>()
+  private var isBuffering = false
+
   private val _events = MutableSharedFlow<Event>(extraBufferCapacity = 64)
   val events: SharedFlow<Event> = _events.asSharedFlow()
+
+  // Start buffering audio before connection is ready
+  fun startBuffering() {
+    isBuffering = true
+    audioBuffer.clear()
+  }
 
   suspend fun connect() {
     if (isConnected) return
@@ -106,6 +116,16 @@ class SonioxWebSocketClient {
               val configJson = json.encodeToString(SonioxConfig.serializer(), config)
               android.util.Log.d("SonioxWS", "Sending config: $configJson")
               webSocket.send(configJson)
+
+              // Send all buffered audio that was recorded while connecting
+              if (audioBuffer.isNotEmpty()) {
+                android.util.Log.d("SonioxWS", "Sending ${audioBuffer.size} buffered audio chunks")
+                for (chunk in audioBuffer) {
+                  webSocket.send(chunk.toByteString())
+                }
+                audioBuffer.clear()
+              }
+              isBuffering = false
 
               _events.tryEmit(Event.Connected)
             }
@@ -179,11 +199,16 @@ class SonioxWebSocketClient {
   fun sendAudio(data: ByteArray) {
     if (isConnected) {
       webSocket?.send(data.toByteString())
+    } else if (isBuffering) {
+      // Buffer audio while connecting
+      audioBuffer.add(data.copyOf())
     }
   }
 
   fun disconnect() {
     isConnected = false
+    isBuffering = false
+    audioBuffer.clear()
     webSocket?.close(1000, "User stopped")
     webSocket = null
   }

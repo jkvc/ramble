@@ -75,12 +75,9 @@ fun TranscribeScreen() {
         sonioxClient.events.collect { event ->
             when (event) {
                 is SonioxWebSocketClient.Event.Connected -> {
+                    // Connection established, audio was already started
                     isConnecting = false
-                    isRecording = true
-                    // Start audio capture
-                    audioRecorder.start { audioData ->
-                        sonioxClient.sendAudio(audioData)
-                    }
+                    // isRecording is already true from start
                 }
                 is SonioxWebSocketClient.Event.FinalWords -> {
                     transcript += event.text
@@ -235,9 +232,20 @@ fun TranscribeScreen() {
                             isRecording = false
                             isConnecting = false
                         } else {
-                            // Start recording
+                            // Start recording immediately
                             error = null
                             isConnecting = true
+                            isRecording = true  // Show recording state immediately
+                            
+                            // Start buffering audio immediately
+                            sonioxClient.startBuffering()
+                            
+                            // Start audio capture immediately (buffers while connecting)
+                            audioRecorder.start { audioData ->
+                                sonioxClient.sendAudio(audioData)
+                            }
+                            
+                            // Connect to Soniox in parallel
                             scope.launch {
                                 sonioxClient.connect()
                             }
@@ -247,22 +255,13 @@ fun TranscribeScreen() {
                     shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                    ),
-                    enabled = !isConnecting
+                    )
                 ) {
-                    if (isConnecting) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(32.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Icon(
-                            imageVector = if (isRecording) Icons.Filled.Stop else Icons.Filled.Mic,
-                            contentDescription = if (isRecording) "Stop" else "Record",
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
+                    Icon(
+                        imageVector = if (isRecording) Icons.Filled.Stop else Icons.Filled.Mic,
+                        contentDescription = if (isRecording) "Stop" else "Record",
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
                 
                 // Delete button (right quarter)
@@ -285,13 +284,13 @@ fun TranscribeScreen() {
                 }
             }
             
-            // Show status only when connecting or recording
-            if (isConnecting || isRecording) {
+            // Show status only when recording
+            if (isRecording) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = if (isConnecting) "Connecting..." else "Recording...",
+                    text = if (isConnecting) "Listening... (connecting)" else "Listening...",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
             

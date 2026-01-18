@@ -66,12 +66,9 @@ class RambleKeyboardService : InputMethodService(), LifecycleOwner, SavedStateRe
             sonioxClient.events.collect { event ->
                 when (event) {
                     is SonioxWebSocketClient.Event.Connected -> {
+                        // Connection established, audio was already started in startRecording
                         isConnecting.value = false
-                        isRecording.value = true
-                        // Start audio capture
-                        audioRecorder.start { audioData ->
-                            sonioxClient.sendAudio(audioData)
-                        }
+                        // isRecording is already true from startRecording
                     }
                     is SonioxWebSocketClient.Event.FinalWords -> {
                         // Insert final text into the text field
@@ -188,7 +185,17 @@ class RambleKeyboardService : InputMethodService(), LifecycleOwner, SavedStateRe
     private fun startRecording() {
         error.value = null
         isConnecting.value = true
+        isRecording.value = true  // Show recording state immediately
         
+        // Start buffering audio immediately
+        sonioxClient.startBuffering()
+        
+        // Start audio capture immediately (buffers while connecting)
+        audioRecorder.start { audioData ->
+            sonioxClient.sendAudio(audioData)
+        }
+        
+        // Connect to Soniox in parallel
         scope.launch {
             sonioxClient.connect()
         }

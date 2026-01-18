@@ -4,22 +4,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-
-// Note: Color import kept for Color.White used in icons
 
 /**
  * Minimal voice input keyboard view similar to Google's native voice input.
@@ -74,7 +71,7 @@ fun KeyboardView(
                     )
                 } else if (isRecording) {
                     Text(
-                        text = "Listening...",
+                        text = if (isConnecting) "Listening... (connecting)" else "Listening...",
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
@@ -118,23 +115,15 @@ fun KeyboardView(
                                 else -> MaterialTheme.colorScheme.primary
                             }
                         )
-                        .clickable(enabled = !isConnecting) { onRecordClick() },
+                        .clickable { onRecordClick() },
                     contentAlignment = Alignment.Center
                 ) {
-                    if (isConnecting) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(32.dp),
-                            color = Color.White,
-                            strokeWidth = 3.dp
-                        )
-                    } else {
-                        Icon(
-                            imageVector = if (isRecording) Icons.Filled.Stop else Icons.Filled.Mic,
-                            contentDescription = if (isRecording) "Stop" else "Voice input",
-                            modifier = Modifier.size(32.dp),
-                            tint = if (!isLoggedIn) sideIconColor.copy(alpha = 0.5f) else Color.White
-                        )
-                    }
+                    Icon(
+                        imageVector = if (isRecording) Icons.Filled.Stop else Icons.Filled.Mic,
+                        contentDescription = if (isRecording) "Stop" else "Voice input",
+                        modifier = Modifier.size(32.dp),
+                        tint = if (!isLoggedIn) sideIconColor.copy(alpha = 0.5f) else Color.White
+                    )
                 }
                 
                 // Backspace button (right) - no background
