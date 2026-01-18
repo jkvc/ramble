@@ -38,7 +38,7 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
     const [isRecording, setIsRecording] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    
+
     // Single unified text state - this is the main input value
     const [text, setText] = useState("");
     // Provisional text shown after cursor (not yet finalized)
@@ -54,6 +54,9 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
     const audioContextRef = useRef<AudioContext | null>(null);
     const processorRef = useRef<ScriptProcessorNode | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
+    // Buffer for audio chunks recorded before WebSocket is ready
+    const audioBufferRef = useRef<ArrayBuffer[]>([]);
+    const wsReadyRef = useRef(false);
 
     // Keep cursor position ref in sync
     useEffect(() => {
@@ -91,9 +94,29 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
 
         setError(null);
         setIsConnecting(true);
+        setIsRecording(true); // Show recording state immediately
+        wsReadyRef.current = false;
+        audioBufferRef.current = [];
+
+        // Focus the textarea immediately
+        textareaRef.current?.focus();
 
         try {
-            // Get Soniox token from backend
+            // Start microphone capture IMMEDIATELY (don't wait for WebSocket)
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    channelCount: 1,
+                    sampleRate: 16000,
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                },
+            });
+            streamRef.current = stream;
+
+            // Start recording and buffering audio immediately
+            startAudioCapture(stream);
+
+            // In parallel, get token and establish WebSocket connection
             const tokenResponse = await fetch("/api/soniox/token", {
                 method: "POST",
             });
@@ -105,23 +128,12 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
 
             const { token, websocketUrl } = await tokenResponse.json();
 
-            // Request microphone access
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    channelCount: 1,
-                    sampleRate: 16000,
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                },
-            });
-            streamRef.current = stream;
-
             // Create WebSocket connection to Soniox
             const ws = new WebSocket(websocketUrl);
             wsRef.current = ws;
 
             ws.onopen = () => {
-                // Send configuration - stt-rt-v3 supports 60+ languages
+                // Send configuration
                 const config = {
                     api_key: token,
                     model: "stt-rt-v3",
@@ -133,13 +145,15 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
                 };
                 ws.send(JSON.stringify(config));
 
-                // Start audio capture
-                startAudioCapture(stream, ws);
-                setIsRecording(true);
+                // Send all buffered audio that was recorded while connecting
+                for (const buffer of audioBufferRef.current) {
+                    ws.send(buffer);
+                }
+                audioBufferRef.current = [];
+
+                // Mark WebSocket as ready for live streaming
+                wsReadyRef.current = true;
                 setIsConnecting(false);
-                
-                // Focus the textarea when recording starts
-                textareaRef.current?.focus();
             };
 
             ws.onmessage = (event) => {
@@ -228,6 +242,7 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
             };
 
             ws.onclose = () => {
+                wsReadyRef.current = false;
                 setIsRecording(false);
                 setIsConnecting(false);
             };
@@ -235,10 +250,11 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to start recording");
             setIsConnecting(false);
+            setIsRecording(false);
         }
     }, [hasAccess]);
 
-    const startAudioCapture = (stream: MediaStream, ws: WebSocket) => {
+    const startAudioCapture = (stream: MediaStream) => {
         // Use MediaRecorder to produce webm/opus format (works with audio_format: "auto")
         const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
             ? 'audio/webm;codecs=opus'
@@ -251,9 +267,15 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
         mediaRecorderRef.current = mediaRecorder;
 
         mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+            if (event.data.size > 0) {
                 event.data.arrayBuffer().then(buffer => {
-                    ws.send(buffer);
+                    if (wsReadyRef.current && wsRef.current?.readyState === WebSocket.OPEN) {
+                        // WebSocket is ready, send directly
+                        wsRef.current.send(buffer);
+                    } else {
+                        // Buffer the audio until WebSocket is ready
+                        audioBufferRef.current.push(buffer);
+                    }
                 });
             }
         };
@@ -274,6 +296,8 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
             wsRef.current.close();
             wsRef.current = null;
         }
+        wsReadyRef.current = false;
+        audioBufferRef.current = [];
 
         // Stop audio processing (legacy, kept for cleanup)
         if (processorRef.current) {
@@ -345,7 +369,7 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
                     rows={8}
                     disabled={!hasAccess}
                 />
-                
+
                 {/* Provisional text indicator */}
                 {provisional && isRecording && (
                     <div className="absolute bottom-3 left-4 right-4 pointer-events-none">
@@ -412,13 +436,13 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
             </div>
 
             <p className="text-center text-xs text-[var(--muted)]">
-                {isConnecting
-                    ? "Connecting..."
-                    : isRecording
-                        ? "Recording... Tap to stop"
-                        : hasAccess
-                            ? "Tap to start recording"
-                            : "Access required"
+                {isRecording
+                    ? isConnecting
+                        ? "Listening... (connecting)"
+                        : "Listening... Tap to stop"
+                    : hasAccess
+                        ? "Tap to start recording"
+                        : "Access required"
                 }
             </p>
 
