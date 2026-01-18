@@ -104,7 +104,7 @@ fun SettingsScreen(
             )
         ) {
             Column {
-                // Language hint
+                // Language hints (multi-select)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -113,20 +113,24 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Language Hint",
+                            text = "Language Hints",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Helps improve recognition accuracy",
+                            text = "Select languages to improve recognition",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    val selectedNames = settings.languageHints.mapNotNull { code ->
+                        SettingsManager.SUPPORTED_LANGUAGES.find { it.first == code }?.second
+                    }
                     Text(
-                        text = SettingsManager.SUPPORTED_LANGUAGES.find { it.first == settings.languageHint }?.second ?: "English",
+                        text = if (selectedNames.size <= 2) selectedNames.joinToString(", ") 
+                               else "${selectedNames.take(2).joinToString(", ")}+${selectedNames.size - 2}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -205,30 +209,36 @@ fun SettingsScreen(
         }
     }
     
-    // Language selection dialog
+    // Language selection dialog (multi-select)
     if (showLanguageDialog) {
         AlertDialog(
             onDismissRequest = { showLanguageDialog = false },
-            title = { Text("Select Language") },
+            title = { Text("Select Languages") },
             text = {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState())
                 ) {
+                    Text(
+                        text = "Select one or more languages for better recognition",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
                     SettingsManager.SUPPORTED_LANGUAGES.forEach { (code, name) ->
+                        val isSelected = settings.languageHints.contains(code)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
                                 .clickable {
-                                    settingsManager.updateLanguageHint(code)
-                                    showLanguageDialog = false
+                                    settingsManager.toggleLanguageHint(code)
                                 }
                                 .padding(12.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(name)
-                            if (code == settings.languageHint) {
+                            if (isSelected) {
                                 Text(
                                     "✓",
                                     color = MaterialTheme.colorScheme.primary,
@@ -241,7 +251,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showLanguageDialog = false }) {
-                    Text("Cancel")
+                    Text("Done")
                 }
             }
         )

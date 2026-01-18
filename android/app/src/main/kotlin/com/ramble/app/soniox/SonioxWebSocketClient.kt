@@ -1,5 +1,6 @@
 package com.ramble.app.soniox
 
+import com.ramble.app.RambleApp
 import com.ramble.app.network.ApiClient
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -53,6 +54,11 @@ class SonioxWebSocketClient {
     encodeDefaults = true // Include fields with default values
   }
 
+  // Filter out special tokens like <end>, <comma>, <period>, etc.
+  private fun filterSpecialTokens(text: String): String {
+    return text.replace(Regex("<[^>]+>"), "")
+  }
+
   private val client =
     OkHttpClient.Builder()
       .connectTimeout(30, TimeUnit.SECONDS)
@@ -90,8 +96,13 @@ class SonioxWebSocketClient {
               android.util.Log.d("SonioxWS", "WebSocket opened")
               isConnected = true
 
+              // Get language hints from settings
+              val languageHints =
+                RambleApp.instance.settingsManager.settings.value.languageHints.toList()
+
               // Send configuration
-              val config = SonioxConfig(api_key = tokenResponse.token)
+              val config =
+                SonioxConfig(api_key = tokenResponse.token, language_hints = languageHints)
               val configJson = json.encodeToString(SonioxConfig.serializer(), config)
               android.util.Log.d("SonioxWS", "Sending config: $configJson")
               webSocket.send(configJson)
@@ -117,10 +128,11 @@ class SonioxWebSocketClient {
                     var nonFinalText = ""
 
                     for (token in tokens) {
+                      val cleanText = filterSpecialTokens(token.text)
                       if (token.is_final) {
-                        finalText += token.text
+                        finalText += cleanText
                       } else {
-                        nonFinalText += token.text
+                        nonFinalText += cleanText
                       }
                     }
 

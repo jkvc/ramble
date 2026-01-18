@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 data class AppSettings(
-    val languageHint: String = "en",
+    val languageHints: Set<String> = setOf("en"),
     val wordContext: String = ""
 )
 
@@ -22,15 +22,31 @@ class SettingsManager(context: Context) {
     val settings: StateFlow<AppSettings> = _settings.asStateFlow()
     
     private fun loadSettings(): AppSettings {
+        val hintsString = prefs.getString(KEY_LANGUAGE_HINTS, "en") ?: "en"
+        val hints = hintsString.split(",").filter { it.isNotBlank() }.toSet()
         return AppSettings(
-            languageHint = prefs.getString(KEY_LANGUAGE_HINT, "en") ?: "en",
+            languageHints = if (hints.isEmpty()) setOf("en") else hints,
             wordContext = prefs.getString(KEY_WORD_CONTEXT, "") ?: ""
         )
     }
     
-    fun updateLanguageHint(language: String) {
-        prefs.edit().putString(KEY_LANGUAGE_HINT, language).apply()
-        _settings.value = _settings.value.copy(languageHint = language)
+    fun updateLanguageHints(languages: Set<String>) {
+        val hintsToSave = if (languages.isEmpty()) setOf("en") else languages
+        prefs.edit().putString(KEY_LANGUAGE_HINTS, hintsToSave.joinToString(",")).apply()
+        _settings.value = _settings.value.copy(languageHints = hintsToSave)
+    }
+    
+    fun toggleLanguageHint(language: String) {
+        val current = _settings.value.languageHints.toMutableSet()
+        if (current.contains(language)) {
+            // Don't remove if it's the last one
+            if (current.size > 1) {
+                current.remove(language)
+            }
+        } else {
+            current.add(language)
+        }
+        updateLanguageHints(current)
     }
     
     fun updateWordContext(context: String) {
@@ -39,7 +55,7 @@ class SettingsManager(context: Context) {
     }
     
     companion object {
-        private const val KEY_LANGUAGE_HINT = "language_hint"
+        private const val KEY_LANGUAGE_HINTS = "language_hints"
         private const val KEY_WORD_CONTEXT = "word_context"
         
         val SUPPORTED_LANGUAGES = listOf(
