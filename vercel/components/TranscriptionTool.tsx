@@ -29,25 +29,58 @@ interface SonioxMessage {
     error?: string;
 }
 
+// Filter out special tokens like <comma>, <period>, etc.
+function filterSpecialTokens(text: string): string {
+    return text.replace(/<[^>]+>/g, '');
+}
+
 export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
     const [isRecording, setIsRecording] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [transcript, setTranscript] = useState("");
+    
+    // Single unified text state - this is the main input value
+    const [text, setText] = useState("");
+    // Provisional text shown after cursor (not yet finalized)
     const [provisional, setProvisional] = useState("");
-    const [typedText, setTypedText] = useState("");
+    // Track cursor position for inserting transcribed text
+    const [cursorPosition, setCursorPosition] = useState(0);
+    // Ref to always have the latest cursor position in callbacks
+    const cursorPositionRef = useRef(0);
 
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const wsRef = useRef<WebSocket | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const processorRef = useRef<ScriptProcessorNode | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
 
+    // Keep cursor position ref in sync
+    useEffect(() => {
+        cursorPositionRef.current = cursorPosition;
+    }, [cursorPosition]);
+
     // Cleanup on unmount
     useEffect(() => {
         return () => {
             stopRecording();
         };
+    }, []);
+
+    // Keep cursor position synced
+    const handleSelect = useCallback(() => {
+        if (textareaRef.current) {
+            const pos = textareaRef.current.selectionEnd;
+            setCursorPosition(pos);
+            cursorPositionRef.current = pos;
+        }
+    }, []);
+
+    const handleTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setText(e.target.value);
+        const pos = e.target.selectionEnd;
+        setCursorPosition(pos);
+        cursorPositionRef.current = pos;
     }, []);
 
     const startRecording = useCallback(async () => {
@@ -104,6 +137,9 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
                 startAudioCapture(stream, ws);
                 setIsRecording(true);
                 setIsConnecting(false);
+                
+                // Focus the textarea when recording starts
+                textareaRef.current?.focus();
             };
 
             ws.onmessage = (event) => {
@@ -122,30 +158,62 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
                         let nonFinalText = "";
 
                         for (const token of message.tokens) {
+                            const cleanText = filterSpecialTokens(token.text);
                             if (token.is_final) {
-                                finalText += token.text;
+                                finalText += cleanText;
                             } else {
-                                nonFinalText += token.text;
+                                nonFinalText += cleanText;
                             }
                         }
 
                         if (finalText) {
-                            setTranscript(prev => prev + finalText);
-                            setProvisional(nonFinalText); // Keep any remaining non-final
+                            // Insert final text at cursor position (use ref for latest value)
+                            const pos = cursorPositionRef.current;
+                            setText(prev => {
+                                const before = prev.slice(0, pos);
+                                const after = prev.slice(pos);
+                                return before + finalText + after;
+                            });
+                            // Update cursor position after insertion
+                            const newPos = pos + finalText.length;
+                            setCursorPosition(newPos);
+                            cursorPositionRef.current = newPos;
+                            // Schedule cursor restoration
+                            setTimeout(() => {
+                                if (textareaRef.current) {
+                                    textareaRef.current.selectionStart = newPos;
+                                    textareaRef.current.selectionEnd = newPos;
+                                }
+                            }, 0);
+                            setProvisional(nonFinalText);
                         } else if (nonFinalText) {
                             setProvisional(nonFinalText);
                         }
                     }
                     // Handle legacy fw/nfw format
                     else if (message.fw && message.fw.length > 0) {
-                        const finalText = message.fw.map(w => w.t).join("");
+                        const finalText = filterSpecialTokens(message.fw.map(w => w.t).join(""));
                         if (finalText) {
-                            setTranscript(prev => prev + finalText);
+                            const pos = cursorPositionRef.current;
+                            setText(prev => {
+                                const before = prev.slice(0, pos);
+                                const after = prev.slice(pos);
+                                return before + finalText + after;
+                            });
+                            const newPos = pos + finalText.length;
+                            setCursorPosition(newPos);
+                            cursorPositionRef.current = newPos;
+                            setTimeout(() => {
+                                if (textareaRef.current) {
+                                    textareaRef.current.selectionStart = newPos;
+                                    textareaRef.current.selectionEnd = newPos;
+                                }
+                            }, 0);
                             setProvisional("");
                         }
                     }
                     else if (message.nfw && message.nfw.length > 0) {
-                        const nonFinalText = message.nfw.map(w => w.t).join("");
+                        const nonFinalText = filterSpecialTokens(message.nfw.map(w => w.t).join(""));
                         setProvisional(nonFinalText);
                     }
                 } catch {
@@ -224,9 +292,17 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
             streamRef.current = null;
         }
 
-        // Commit any provisional text
+        // Commit any provisional text at cursor position
         if (provisional) {
-            setTranscript(prev => prev + provisional);
+            const pos = cursorPositionRef.current;
+            setText(prev => {
+                const before = prev.slice(0, pos);
+                const after = prev.slice(pos);
+                return before + provisional + after;
+            });
+            const newPos = pos + provisional.length;
+            setCursorPosition(newPos);
+            cursorPositionRef.current = newPos;
             setProvisional("");
         }
 
@@ -242,107 +318,61 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
         }
     };
 
-    const clearTranscript = () => {
-        setTranscript("");
+    const clearText = () => {
+        setText("");
         setProvisional("");
-        setTypedText("");
+        setCursorPosition(0);
+        textareaRef.current?.focus();
     };
 
     const copyToClipboard = async () => {
-        const fullText = transcript + provisional + (typedText ? "\n" + typedText : "");
-        await navigator.clipboard.writeText(fullText);
+        await navigator.clipboard.writeText(text);
     };
 
-    const combinedText = transcript + provisional;
-
     return (
-        <div className="space-y-6">
-            {/* Record Button */}
-            <div className="flex items-center justify-center">
-                <button
-                    onClick={toggleRecording}
-                    disabled={!hasAccess || isConnecting}
-                    className={`
-            relative w-24 h-24 rounded-full transition-all duration-300
-            ${isRecording
-                            ? "bg-red-500 hover:bg-red-600 animate-pulse"
-                            : hasAccess
-                                ? "bg-[var(--accent)] hover:bg-[var(--accent-hover)]"
-                                : "bg-[var(--surface)] cursor-not-allowed"
-                        }
-            disabled:opacity-50
-            flex items-center justify-center
-            shadow-lg
-          `}
-                >
-                    {isConnecting ? (
-                        <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : isRecording ? (
-                        <div className="w-8 h-8 bg-white rounded-sm" />
-                    ) : (
-                        <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                        </svg>
-                    )}
-                </button>
-            </div>
-
-            <p className="text-center text-sm text-[var(--muted)]">
-                {isConnecting
-                    ? "Connecting..."
-                    : isRecording
-                        ? "Recording... Click to stop"
-                        : hasAccess
-                            ? "Click to start recording"
-                            : "Access required to record"
-                }
-            </p>
-
-            {/* Error Message */}
-            {error && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400">
-                    {error}
-                </div>
-            )}
-
-            {/* Transcript Output */}
+        <div className="space-y-4">
+            {/* Main text input area */}
             <div className="relative">
-                <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-6 min-h-[200px]">
-                    <div className="prose prose-invert max-w-none">
-                        {combinedText || typedText ? (
-                            <>
-                                <span className="text-white">{transcript}</span>
-                                {provisional && (
-                                    <span className="text-[var(--muted)] italic">{provisional}</span>
-                                )}
-                            </>
-                        ) : (
-                            <p className="text-[var(--muted)] italic">
-                                Your transcription will appear here...
-                            </p>
-                        )}
+                <textarea
+                    ref={textareaRef}
+                    value={text}
+                    onChange={handleTextChange}
+                    onSelect={handleSelect}
+                    onClick={handleSelect}
+                    onKeyUp={handleSelect}
+                    placeholder={hasAccess ? "Start recording to transcribe, or type here..." : "Access required to use transcription"}
+                    className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent resize-none text-[var(--foreground)] placeholder:text-[var(--muted)] text-base leading-relaxed"
+                    rows={8}
+                    disabled={!hasAccess}
+                />
+                
+                {/* Provisional text indicator */}
+                {provisional && isRecording && (
+                    <div className="absolute bottom-3 left-4 right-4 pointer-events-none">
+                        <span className="text-[var(--muted)] italic text-sm">
+                            {provisional}
+                        </span>
                     </div>
-                </div>
+                )}
 
-                {/* Action Buttons */}
-                {(combinedText || typedText) && (
-                    <div className="absolute top-4 right-4 flex gap-2">
+                {/* Action buttons */}
+                {text && (
+                    <div className="absolute top-2 right-2 flex gap-1">
                         <button
                             onClick={copyToClipboard}
-                            className="p-2 bg-[var(--surface-hover)] hover:bg-[var(--border)] rounded-lg transition-colors"
+                            className="p-1.5 bg-[var(--surface)] hover:bg-[var(--surface-hover)] rounded transition-colors"
                             title="Copy to clipboard"
                         >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                             </svg>
                         </button>
                         <button
-                            onClick={clearTranscript}
-                            className="p-2 bg-[var(--surface-hover)] hover:bg-[var(--border)] rounded-lg transition-colors"
+                            onClick={clearText}
+                            className="p-1.5 bg-[var(--surface)] hover:bg-[var(--surface-hover)] rounded transition-colors"
                             title="Clear"
                         >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                         </button>
@@ -350,19 +380,54 @@ export function TranscriptionTool({ hasAccess }: TranscriptionToolProps) {
                 )}
             </div>
 
-            {/* Text Input for Manual Typing */}
-            <div>
-                <label className="block text-sm font-medium mb-2 text-[var(--muted)]">
-                    Add text manually (while recording)
-                </label>
-                <textarea
-                    value={typedText}
-                    onChange={(e) => setTypedText(e.target.value)}
-                    placeholder="Type here to add text..."
-                    className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent resize-none"
-                    rows={3}
-                />
+            {/* Record Button */}
+            <div className="flex items-center justify-center">
+                <button
+                    onClick={toggleRecording}
+                    disabled={!hasAccess || isConnecting}
+                    className={`
+                        relative w-14 h-14 rounded-full transition-all duration-200
+                        ${isRecording
+                            ? "bg-red-500 hover:bg-red-600"
+                            : hasAccess
+                                ? "bg-[var(--accent)] hover:bg-[var(--accent-hover)]"
+                                : "bg-[var(--muted)] cursor-not-allowed"
+                        }
+                        disabled:opacity-50
+                        flex items-center justify-center
+                        shadow-sm
+                    `}
+                >
+                    {isConnecting ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : isRecording ? (
+                        <div className="w-5 h-5 bg-white rounded-sm" />
+                    ) : (
+                        <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                        </svg>
+                    )}
+                </button>
             </div>
+
+            <p className="text-center text-xs text-[var(--muted)]">
+                {isConnecting
+                    ? "Connecting..."
+                    : isRecording
+                        ? "Recording... Tap to stop"
+                        : hasAccess
+                            ? "Tap to start recording"
+                            : "Access required"
+                }
+            </p>
+
+            {/* Error Message */}
+            {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                    {error}
+                </div>
+            )}
         </div>
     );
 }

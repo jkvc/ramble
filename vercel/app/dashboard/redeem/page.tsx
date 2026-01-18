@@ -43,12 +43,11 @@ export default function RedeemPage() {
 
   if (success) {
     return (
-      <div className="max-w-md mx-auto mt-12">
-        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-8 text-center">
-          <div className="text-4xl mb-4">🎉</div>
-          <h1 className="text-2xl font-bold mb-4 text-green-400">Success!</h1>
-          <p className="text-[var(--muted)]">
-            Your voucher has been redeemed. Redirecting to dashboard...
+      <div className="mt-8">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+          <h1 className="text-lg font-semibold mb-2 text-green-700">Success!</h1>
+          <p className="text-sm text-green-600">
+            Your voucher has been redeemed. Redirecting...
           </p>
         </div>
       </div>
@@ -56,19 +55,18 @@ export default function RedeemPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-12">
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-8">
-        <div className="text-center mb-6">
-          <div className="text-3xl mb-2">🎟️</div>
-          <h1 className="text-2xl font-bold">Redeem Voucher</h1>
-          <p className="text-[var(--muted)] text-sm mt-2">
+    <div className="mt-8">
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-lg p-6">
+        <div className="text-center mb-5">
+          <h1 className="text-lg font-semibold">Redeem Voucher</h1>
+          <p className="text-[var(--muted)] text-sm mt-1">
             Enter your voucher code to unlock access
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="code" className="block text-sm font-medium mb-2">
+            <label htmlFor="code" className="block text-sm font-medium mb-1.5">
               Voucher Code
             </label>
             <input
@@ -77,13 +75,13 @@ export default function RedeemPage() {
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               required
-              className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent text-center font-mono text-lg tracking-wider"
+              className="w-full px-3 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent text-center font-mono tracking-wider text-sm"
               placeholder="RAMBLE-XXXXXXXX"
             />
           </div>
 
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
               {error}
             </div>
           )}
@@ -91,7 +89,7 @@ export default function RedeemPage() {
           <button
             type="submit"
             disabled={loading || !code}
-            className="w-full py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
+            className="w-full py-2.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors text-sm"
           >
             {loading ? "Redeeming..." : "Redeem Voucher"}
           </button>

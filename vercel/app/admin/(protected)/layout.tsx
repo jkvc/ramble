@@ -18,34 +18,34 @@ export default async function AdminProtectedLayout({
   return (
     <div className="min-h-screen flex flex-col">
       {/* Admin Header */}
-      <header className="border-b border-[var(--border)] px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/admin" className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-              Ramble Admin
+      <header className="border-b border-[var(--border)] px-4 sm:px-6 py-3">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4 sm:gap-6">
+            <Link href="/admin" className="text-lg font-semibold text-[var(--foreground)]">
+              Admin
             </Link>
             <nav className="hidden md:flex items-center gap-4 text-sm">
-              <Link href="/admin" className="text-[var(--muted)] hover:text-white transition-colors">
+              <Link href="/admin" className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors">
                 Dashboard
               </Link>
-              <Link href="/admin/users" className="text-[var(--muted)] hover:text-white transition-colors">
+              <Link href="/admin/users" className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors">
                 Users
               </Link>
-              <Link href="/admin/vouchers" className="text-[var(--muted)] hover:text-white transition-colors">
+              <Link href="/admin/vouchers" className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors">
                 Vouchers
               </Link>
-              <Link href="/admin/transcribe" className="text-[var(--muted)] hover:text-white transition-colors">
+              <Link href="/admin/transcribe" className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors">
                 Transcribe
               </Link>
             </nav>
           </div>
           
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-[var(--muted)]">{user.email}</span>
+          <div className="flex items-center gap-3 sm:gap-4">
+            <span className="text-sm text-[var(--muted)] hidden sm:inline truncate max-w-[150px]">{user.email}</span>
             <form action="/api/auth/logout" method="POST">
               <button
                 type="submit"
-                className="text-sm text-[var(--muted)] hover:text-white transition-colors"
+                className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
               >
                 Sign out
               </button>
@@ -55,8 +55,8 @@ export default async function AdminProtectedLayout({
       </header>
 
       {/* Content */}
-      <main className="flex-1 p-6">
-        <div className="max-w-7xl mx-auto">
+      <main className="flex-1 px-4 sm:px-6 py-6">
+        <div className="max-w-5xl mx-auto">
           {children}
         </div>
       </main>
