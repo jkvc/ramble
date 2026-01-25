@@ -5,7 +5,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 // Light theme colors matching web app's minimalistic bright theme
 private val LightColorScheme = lightColorScheme(
@@ -49,6 +51,13 @@ fun RambleTheme(
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    
+    // Control system UI bars (status bar and navigation bar)
+    val systemUiController = rememberSystemUiController()
+    LaunchedEffect(darkTheme) {
+        systemUiController.setStatusBarDarkContentIsLight(darkTheme)
+        systemUiController.setNavigationBarDarkContentIsLight(darkTheme)
+    }
     
     MaterialTheme(
         colorScheme = colorScheme,
