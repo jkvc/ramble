@@ -1,16 +1,19 @@
 :root {
-  --bg: #1a1a2e;
-  --surface: #16213e;
-  --surface-hover: #1a2847;
-  --text: #e8e8e8;
-  --text-muted: #8892a4;
-  --accent: #2196F3;
-  --accent-hover: #1976D2;
-  --error: #F44336;
-  --success: #4CAF50;
-  --amber: #FFC107;
-  --border: #2a3a5c;
-  --radius: 8px;
+  --bg: #0a0a14;
+  --surface: #12121e;
+  --surface-hover: #1a1a2e;
+  --text: #f0f0f5;
+  --text-muted: #8888a0;
+  --accent: #0066FF;
+  --accent-hover: #0055DD;
+  --accent-purple: #9933FF;
+  --error: #FF4466;
+  --success: #00CC88;
+  --amber: #FFAA00;
+  --border: #2a2a3e;
+  --radius: 12px;
+  --radius-pill: 9999px;
+  --gradient: linear-gradient(135deg, #0066FF, #9933FF);
 }
 
 * {
@@ -38,33 +41,37 @@ body {
 button {
   cursor: pointer;
   border: none;
-  border-radius: var(--radius);
+  border-radius: var(--radius-pill);
   padding: 8px 16px;
   font-size: 14px;
-  transition: background-color 0.15s;
+  transition: all 0.2s ease;
 }
 
 input {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-pill);
   color: var(--text);
-  padding: 8px 12px;
+  padding: 10px 16px;
   font-size: 14px;
   outline: none;
   width: 100%;
+  transition: all 0.2s ease;
 }
 
 input:focus {
-  border-color: var(--accent);
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px rgba(153, 51, 255, 0.3);
 }
 
 .btn-primary {
-  background: var(--accent);
+  background: var(--gradient);
   color: white;
+  box-shadow: 0 2px 12px rgba(0, 102, 255, 0.2);
 }
 .btn-primary:hover {
-  background: var(--accent-hover);
+  filter: brightness(1.1);
+  box-shadow: 0 4px 20px rgba(0, 102, 255, 0.3);
 }
 
 .btn-danger {
@@ -72,7 +79,7 @@ input:focus {
   color: white;
 }
 .btn-danger:hover {
-  background: #d32f2f;
+  background: #E8334F;
 }
 
 .btn-ghost {
@@ -83,4 +90,27 @@ input:focus {
 .btn-ghost:hover {
   color: var(--text);
   background: var(--surface-hover);
+}
+
+.glass {
+  background: rgba(18, 18, 30, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.gradient-text {
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(0, 102, 255, 0.4); }
+  50% { box-shadow: 0 0 25px rgba(153, 51, 255, 0.5); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }

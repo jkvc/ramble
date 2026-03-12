@@ -329,7 +329,7 @@ export function TranscriptionTool({ apiKey }: TranscriptionToolProps) {
                     onClick={handleSelect}
                     onKeyUp={handleSelect}
                     placeholder="Start recording to transcribe, or type here..."
-                    className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent resize-none text-[var(--foreground)] placeholder:text-[var(--muted)] text-base leading-relaxed"
+                    className="w-full px-4 py-3 glass border border-[var(--border)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent resize-none text-[var(--foreground)] placeholder:text-[var(--muted)] text-base leading-relaxed"
                     rows={8}
                 />
 
@@ -345,7 +345,7 @@ export function TranscriptionTool({ apiKey }: TranscriptionToolProps) {
                     <div className="absolute top-2 right-2 flex gap-1">
                         <button
                             onClick={copyToClipboard}
-                            className="p-1.5 bg-[var(--surface)] hover:bg-[var(--surface-hover)] rounded transition-colors"
+                            className="p-1.5 bg-[var(--surface)] hover:bg-[var(--surface-hover)] rounded-full transition-colors"
                             title="Copy to clipboard"
                         >
                             <svg className="w-4 h-4 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -354,7 +354,7 @@ export function TranscriptionTool({ apiKey }: TranscriptionToolProps) {
                         </button>
                         <button
                             onClick={clearText}
-                            className="p-1.5 bg-[var(--surface)] hover:bg-[var(--surface-hover)] rounded transition-colors"
+                            className="p-1.5 bg-[var(--surface)] hover:bg-[var(--surface-hover)] rounded-full transition-colors"
                             title="Clear"
                         >
                             <svg className="w-4 h-4 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -370,14 +370,13 @@ export function TranscriptionTool({ apiKey }: TranscriptionToolProps) {
                     onClick={toggleRecording}
                     disabled={isConnecting}
                     className={`
-                        relative w-14 h-14 rounded-full transition-all duration-200
+                        relative w-16 h-16 rounded-full transition-all duration-200
                         ${isRecording
-                            ? "bg-red-500 hover:bg-red-600"
-                            : "bg-[var(--accent)] hover:bg-[var(--accent-hover)]"
+                            ? "bg-gradient-to-br from-[#0066FF] to-[#9933FF] shadow-[0_0_24px_rgba(0,102,255,0.4)] animate-[recording-pulse_2s_ease-in-out_infinite]"
+                            : "bg-gradient-to-br from-[#0066FF] to-[#9933FF] hover:shadow-[0_0_20px_rgba(0,102,255,0.3)]"
                         }
                         disabled:opacity-50
                         flex items-center justify-center
-                        shadow-sm
                     `}
                 >
                     {isConnecting ? (
@@ -403,7 +402,7 @@ export function TranscriptionTool({ apiKey }: TranscriptionToolProps) {
             </p>
 
             {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                <div className="p-3 bg-[var(--error)]/10 border border-[var(--error)]/20 rounded-2xl text-[var(--error)] text-sm">
                     {error}
                 </div>
             )}

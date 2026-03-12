@@ -7,8 +7,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun ApiKeyScreen(
@@ -26,7 +31,7 @@ fun ApiKeyScreen(
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             )
@@ -37,9 +42,15 @@ fun ApiKeyScreen(
             ) {
                 Text(
                     text = "Ramble",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = TextStyle(
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        brush = Brush.linearGradient(
+                            colors = listOf(Color(0xFF0066FF), Color(0xFF9933FF)),
+                            start = Offset.Zero,
+                            end = Offset(200f, 200f)
+                        )
+                    )
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -62,7 +73,7 @@ fun ApiKeyScreen(
                     placeholder = { Text("Paste your API key here") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline
@@ -92,7 +103,7 @@ fun ApiKeyScreen(
                     },
                     enabled = key.isNotBlank(),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(24.dp)
                 ) {
                     Text("Save & Start", modifier = Modifier.padding(vertical = 4.dp))
                 }

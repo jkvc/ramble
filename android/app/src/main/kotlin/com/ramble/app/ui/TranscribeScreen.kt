@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,6 +22,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -127,7 +131,7 @@ fun TranscribeScreen() {
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(
                 containerColor = if (serviceRunning)
                     MaterialTheme.colorScheme.primaryContainer
@@ -170,7 +174,7 @@ fun TranscribeScreen() {
                                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             })
                         },
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(24.dp)
                     ) {
                         Text("Enable")
                     }
@@ -184,7 +188,7 @@ fun TranscribeScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             )
@@ -226,7 +230,7 @@ fun TranscribeScreen() {
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
                     ),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(20.dp)
                 ) {
                     Text(
                         text = errorMessage,
@@ -265,51 +269,89 @@ fun TranscribeScreen() {
                     )
                 }
 
-                Button(
-                    onClick = {
-                        if (!hasPermission) {
-                            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                            return@Button
-                        }
+                // Gradient record button with glow pulse when recording
+                val infiniteTransition = rememberInfiniteTransition(label = "glow")
+                val glowAlpha by infiniteTransition.animateFloat(
+                    initialValue = 0.3f,
+                    targetValue = 0.7f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(1500, easing = EaseInOut),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "glowAlpha"
+                )
 
-                        if (isRecording || isConnecting) {
-                            sonioxClient.disconnect()
-                            audioRecorder.stop()
-                            isRecording = false
-                            isConnecting = false
-                        } else {
-                            val apiKey = RambleApp.instance.apiKeyManager.apiKey.value
-                            if (apiKey == null) {
-                                error = "Please set your API key in Settings"
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.size(80.dp)
+                ) {
+                    // Glow ring when recording
+                    if (isRecording) {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .shadow(
+                                    elevation = (12 * glowAlpha).dp,
+                                    shape = CircleShape,
+                                    ambientColor = Color(0xFF0066FF).copy(alpha = glowAlpha),
+                                    spotColor = Color(0xFF9933FF).copy(alpha = glowAlpha)
+                                )
+                        )
+                    }
+                    Button(
+                        onClick = {
+                            if (!hasPermission) {
+                                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                                 return@Button
                             }
 
-                            error = null
-                            isConnecting = true
-                            isRecording = true
+                            if (isRecording || isConnecting) {
+                                sonioxClient.disconnect()
+                                audioRecorder.stop()
+                                isRecording = false
+                                isConnecting = false
+                            } else {
+                                val apiKey = RambleApp.instance.apiKeyManager.apiKey.value
+                                if (apiKey == null) {
+                                    error = "Please set your API key in Settings"
+                                    return@Button
+                                }
 
-                            sonioxClient.startBuffering()
+                                error = null
+                                isConnecting = true
+                                isRecording = true
 
-                            audioRecorder.start { audioData ->
-                                sonioxClient.sendAudio(audioData)
+                                sonioxClient.startBuffering()
+
+                                audioRecorder.start { audioData ->
+                                    sonioxClient.sendAudio(audioData)
+                                }
+
+                                scope.launch {
+                                    sonioxClient.connect(apiKey)
+                                }
                             }
-
-                            scope.launch {
-                                sonioxClient.connect(apiKey)
-                            }
-                        }
-                    },
-                    modifier = Modifier.size(80.dp),
-                    shape = CircleShape,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Icon(
-                        imageVector = if (isRecording) Icons.Filled.Stop else Icons.Filled.Mic,
-                        contentDescription = if (isRecording) "Stop" else "Record",
-                        modifier = Modifier.size(32.dp)
-                    )
+                        },
+                        modifier = Modifier
+                            .size(80.dp)
+                            .background(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(Color(0xFF0066FF), Color(0xFF9933FF))
+                                ),
+                                shape = CircleShape
+                            ),
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Transparent
+                        )
+                    ) {
+                        Icon(
+                            imageVector = if (isRecording) Icons.Filled.Stop else Icons.Filled.Mic,
+                            contentDescription = if (isRecording) "Stop" else "Record",
+                            modifier = Modifier.size(32.dp),
+                            tint = Color.White
+                        )
+                    }
                 }
 
                 IconButton(

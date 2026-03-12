@@ -9,40 +9,42 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
-// Light theme colors matching web app's minimalistic bright theme
-private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF2563EB),        // Blue accent (matches web --accent)
+// Unified dark palette — matches web & Electron surfaces
+private val DarkColorScheme = darkColorScheme(
+    primary = Color(0xFF0066FF),         // Accent blue
     onPrimary = Color.White,
-    primaryContainer = Color(0xFF1D4ED8), // Darker blue for hover
-    secondary = Color(0xFF6B7280),       // Muted gray
-    background = Color(0xFFFFFFFF),      // White background (matches web --background)
-    surface = Color(0xFFF8F9FA),         // Light gray surface (matches web --surface)
-    surfaceVariant = Color(0xFFF1F3F5),  // Surface hover
-    surfaceContainer = Color(0xFFF1F3F5),
-    onBackground = Color(0xFF1A1A1A),    // Dark text (matches web --foreground)
-    onSurface = Color(0xFF1A1A1A),
-    onSurfaceVariant = Color(0xFF6B7280), // Muted text (matches web --muted)
-    error = Color(0xFFDC2626),           // Error red (matches web --error)
-    outline = Color(0xFFE5E7EB),         // Border color (matches web --border)
-    outlineVariant = Color(0xFFE5E7EB),
+    primaryContainer = Color(0xFF0055DD),
+    secondary = Color(0xFF9933FF),       // Accent purple
+    background = Color(0xFF0A0A14),      // --bg
+    surface = Color(0xFF12121E),         // --surface
+    surfaceVariant = Color(0xFF1A1A2E),  // --surface-hover
+    surfaceContainer = Color(0xFF1A1A2E),
+    onBackground = Color(0xFFF0F0F5),    // --text
+    onSurface = Color(0xFFF0F0F5),
+    onSurfaceVariant = Color(0xFF8888A0), // --text-muted
+    onPrimaryContainer = Color(0xFFF0F0F5),
+    error = Color(0xFFFF4466),           // --error
+    outline = Color(0xFF2A2A3E),         // --border
+    outlineVariant = Color(0xFF2A2A3E),
 )
 
-// Dark theme colors
-private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF60A5FA),         // Lighter blue for dark mode
-    onPrimary = Color.Black,
-    primaryContainer = Color(0xFF3B82F6),
-    secondary = Color(0xFF9CA3AF),       // Lighter muted gray
-    background = Color(0xFF121212),      // Dark background
-    surface = Color(0xFF1E1E1E),         // Dark surface
-    surfaceVariant = Color(0xFF2A2A2A),  // Slightly lighter surface
-    surfaceContainer = Color(0xFF2A2A2A),
-    onBackground = Color(0xFFE5E7EB),    // Light text
-    onSurface = Color(0xFFE5E7EB),
-    onSurfaceVariant = Color(0xFF9CA3AF), // Muted light text
-    error = Color(0xFFF87171),           // Lighter error red
-    outline = Color(0xFF3F3F3F),         // Dark border
-    outlineVariant = Color(0xFF3F3F3F),
+// Light palette — branded blue/purple with light backgrounds
+private val LightColorScheme = lightColorScheme(
+    primary = Color(0xFF0066FF),         // Same accent blue
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF0055DD),
+    secondary = Color(0xFF9933FF),       // Same accent purple
+    background = Color(0xFFF8F9FC),
+    surface = Color(0xFFFFFFFF),
+    surfaceVariant = Color(0xFFF1F3F8),
+    surfaceContainer = Color(0xFFF1F3F8),
+    onBackground = Color(0xFF0A0A14),
+    onSurface = Color(0xFF0A0A14),
+    onSurfaceVariant = Color(0xFF6B7280),
+    onPrimaryContainer = Color.White,
+    error = Color(0xFFFF4466),
+    outline = Color(0xFFE0E0EA),
+    outlineVariant = Color(0xFFE0E0EA),
 )
 
 @Composable

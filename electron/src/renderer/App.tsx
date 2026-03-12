@@ -127,7 +127,7 @@ export function App() {
   if (!settings.apiKey) {
     return (
       <div style={{ padding: 24 }}>
-        <h1 style={{ marginBottom: 16, fontSize: 20 }}>Ramble</h1>
+        <h1 className="gradient-text" style={{ marginBottom: 16, fontSize: 24, fontWeight: 700 }}>Ramble</h1>
         <ApiKeyInput
           onSave={(key) => handleSaveSettings({ apiKey: key })}
         />
@@ -164,7 +164,8 @@ export function App() {
               padding: "12px 0",
               background: tab === t ? "var(--bg)" : "transparent",
               color: tab === t ? "var(--accent)" : "var(--text-muted)",
-              borderBottom: tab === t ? "2px solid var(--accent)" : "2px solid transparent",
+              borderBottom: tab === t ? "2px solid transparent" : "2px solid transparent",
+              borderImage: tab === t ? "linear-gradient(90deg, #0066FF, #9933FF) 1" : "none",
               borderRadius: 0,
               fontWeight: tab === t ? 600 : 400,
               textTransform: "capitalize",
@@ -217,7 +218,7 @@ function LiveTab({
   const stateColors: Record<RecordingState, string> = {
     idle: "var(--accent)",
     connecting: "var(--amber)",
-    recording: "var(--error)",
+    recording: "linear-gradient(135deg, #0066FF, #9933FF)",
   };
 
   const stateLabels: Record<RecordingState, string> = {
@@ -261,12 +262,13 @@ function LiveTab({
 
       {/* Transcript area */}
       <div
+        className="glass"
         style={{
-          background: "var(--surface)",
-          borderRadius: "var(--radius)",
+          borderRadius: 16,
           padding: 16,
           minHeight: 200,
           border: "1px solid var(--border)",
+          animation: "fade-in 0.3s ease-out",
         }}
       >
         {transcript || provisional ? (
@@ -287,12 +289,6 @@ function LiveTab({
         )}
       </div>
 
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-      `}</style>
     </div>
   );
 }

@@ -35,13 +35,13 @@ export function TranscriptHistory({
             <div
               key={session.id}
               onClick={() => onSelect(session)}
+              className="glass"
               style={{
-                background: "var(--surface)",
                 border: "1px solid var(--border)",
-                borderRadius: "var(--radius)",
+                borderRadius: 16,
                 padding: 12,
                 cursor: "pointer",
-                transition: "background 0.15s",
+                transition: "all 0.2s ease",
               }}
               onMouseEnter={(e) =>
                 (e.currentTarget.style.background = "var(--surface-hover)")

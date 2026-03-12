@@ -32,9 +32,9 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="border-b border-[var(--border)] px-4 sm:px-6 py-3">
+      <header className="border-b border-[var(--border)] px-4 sm:px-6 py-3 glass">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <h1 className="text-lg font-semibold">Ramble</h1>
+          <h1 className="text-lg font-bold gradient-text">Ramble</h1>
           {apiKey && (
             <button
               onClick={() => setShowSettings(!showSettings)}
@@ -55,7 +55,7 @@ export default function Home() {
         <div className="w-full max-w-2xl mx-auto">
           {showSettings ? (
             <div className="w-full max-w-md mx-auto space-y-4">
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-lg p-6">
+              <div className="glass border border-[var(--border)] rounded-2xl p-6">
                 <h2 className="text-lg font-medium mb-4">Settings</h2>
                 <div className="space-y-3">
                   <div>
@@ -65,13 +65,13 @@ export default function Home() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShowSettings(false)}
-                      className="flex-1 px-4 py-2 bg-[var(--surface-hover)] hover:bg-[var(--border)] rounded-lg transition-colors text-sm"
+                      className="flex-1 px-4 py-2.5 bg-[var(--surface-hover)] hover:bg-[var(--border)] rounded-full transition-colors text-sm"
                     >
                       Back
                     </button>
                     <button
                       onClick={handleClearKey}
-                      className="flex-1 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors text-sm"
+                      className="flex-1 px-4 py-2.5 bg-[var(--error)]/10 hover:bg-[var(--error)]/20 text-[var(--error)] rounded-full transition-colors text-sm"
                     >
                       Remove Key
                     </button>

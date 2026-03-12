@@ -5,10 +5,10 @@ import type { RecordingState } from "../shared/types";
 let tray: Tray | null = null;
 
 const COLORS: Record<string, string> = {
-  idle: "#2196F3",
-  connecting: "#FFC107",
-  recording: "#F44336",
-  nokey: "#9E9E9E",
+  idle: "#0066FF",
+  connecting: "#FFAA00",
+  recording: "#9933FF",
+  nokey: "#8888a0",
 };
 
 function createTrayIcon(color: string): Electron.NativeImage {

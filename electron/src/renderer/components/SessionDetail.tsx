@@ -20,6 +20,7 @@ export function SessionDetail({
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       {/* Header */}
       <div
+        className="glass"
         style={{
           display: "flex",
           alignItems: "center",
@@ -52,9 +53,9 @@ export function SessionDetail({
       {/* Transcript */}
       <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
         <div
+          className="glass"
           style={{
-            background: "var(--surface)",
-            borderRadius: "var(--radius)",
+            borderRadius: 16,
             padding: 16,
             border: "1px solid var(--border)",
             whiteSpace: "pre-wrap",
