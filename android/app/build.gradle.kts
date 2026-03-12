@@ -17,9 +17,6 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        // Backend URL - can be overridden in local.properties
-        buildConfigField("String", "BACKEND_URL", "\"https://ramble-rho.vercel.app\"")
     }
 
     buildTypes {
@@ -76,4 +73,8 @@ dependencies {
     // Kotlin
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+
+    // Testing
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
 }

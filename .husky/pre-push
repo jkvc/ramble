@@ -1,9 +1,16 @@
 #!/bin/sh
 
-# Run build in vercel directory to catch errors before pushing
-# Use a separate output directory to avoid interfering with dev server
+# Vercel: Build + test in isolated directory (won't affect running dev server)
 cd vercel
 NEXT_BUILD_DIR=.next-prepush pnpm build
-
-# Clean up the temporary build directory
+pnpm test
 rm -rf .next-prepush
+cd ..
+
+# Android: Run unit tests if Android SDK is available
+# Uses Gradle daemon which doesn't affect running Android Studio
+if [ -d "android" ] && [ -n "$ANDROID_HOME" ]; then
+  cd android
+  ./gradlew testDebugUnitTest --daemon
+  cd ..
+fi

@@ -19,20 +19,19 @@ import com.ramble.app.settings.SettingsManager
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onLogout: () -> Unit
+    onClearApiKey: () -> Unit
 ) {
     val settingsManager = RambleApp.instance.settingsManager
     val settings by settingsManager.settings.collectAsState()
-    val user by RambleApp.instance.authManager.currentUser.collectAsState()
-    
+    val apiKey by RambleApp.instance.apiKeyManager.apiKey.collectAsState()
+
     var showLanguageDialog by remember { mutableStateOf(false) }
     var wordContext by remember { mutableStateOf(settings.wordContext) }
-    
-    // Update local state when settings change
+
     LaunchedEffect(settings.wordContext) {
         wordContext = settings.wordContext
     }
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -46,17 +45,17 @@ fun SettingsScreen(
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onBackground
         )
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
-        // Account section
+
+        // API Key section
         Text(
-            text = "Account",
+            text = "API Key",
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 8.dp)
         )
-        
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -71,23 +70,23 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Signed in as",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = user?.email ?: "Not signed in",
+                        text = "Soniox API Key",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = if (apiKey != null) "${"*".repeat(8)}${apiKey!!.takeLast(4)}" else "Not set",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         // Voice settings section
         Text(
             text = "Voice Settings",
@@ -95,7 +94,7 @@ fun SettingsScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 8.dp)
         )
-        
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -104,7 +103,6 @@ fun SettingsScreen(
             )
         ) {
             Column {
-                // Language hints (multi-select)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -129,18 +127,17 @@ fun SettingsScreen(
                         SettingsManager.SUPPORTED_LANGUAGES.find { it.first == code }?.second
                     }
                     Text(
-                        text = if (selectedNames.size <= 2) selectedNames.joinToString(", ") 
+                        text = if (selectedNames.size <= 2) selectedNames.joinToString(", ")
                                else "${selectedNames.take(2).joinToString(", ")}+${selectedNames.size - 2}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                
+
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                 )
-                
-                // Word context
+
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -156,9 +153,9 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     OutlinedTextField(
                         value = wordContext,
                         onValueChange = { wordContext = it },
@@ -177,9 +174,9 @@ fun SettingsScreen(
                         minLines = 2,
                         maxLines = 4
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     Button(
                         onClick = { settingsManager.updateWordContext(wordContext) },
                         enabled = wordContext != settings.wordContext,
@@ -191,12 +188,11 @@ fun SettingsScreen(
                 }
             }
         }
-        
+
         Spacer(modifier = Modifier.weight(1f))
-        
-        // Logout button at bottom
+
         Button(
-            onClick = onLogout,
+            onClick = onClearApiKey,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 16.dp),
@@ -205,11 +201,10 @@ fun SettingsScreen(
                 containerColor = MaterialTheme.colorScheme.error
             )
         ) {
-            Text("Sign Out", modifier = Modifier.padding(vertical = 4.dp))
+            Text("Remove API Key", modifier = Modifier.padding(vertical = 4.dp))
         }
     }
-    
-    // Language selection dialog (multi-select)
+
     if (showLanguageDialog) {
         AlertDialog(
             onDismissRequest = { showLanguageDialog = false },

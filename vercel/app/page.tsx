@@ -1,69 +1,99 @@
-import Link from "next/link";
+"use client";
+
+import { useState, useEffect } from "react";
+import { getApiKey, setApiKey, clearApiKey } from "../lib/api-key";
+import { ApiKeyInput } from "../components/ApiKeyInput";
+import { TranscriptionTool } from "../components/TranscriptionTool";
 
 export default function Home() {
+  const [apiKey, setApiKeyState] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  useEffect(() => {
+    setApiKeyState(getApiKey());
+    setLoaded(true);
+  }, []);
+
+  const handleSaveKey = (key: string) => {
+    setApiKey(key);
+    setApiKeyState(key);
+    setShowSettings(false);
+  };
+
+  const handleClearKey = () => {
+    clearApiKey();
+    setApiKeyState(null);
+    setShowSettings(false);
+  };
+
+  if (!loaded) return null;
+
   return (
     <main className="min-h-screen flex flex-col">
-      {/* Hero Section */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-16 sm:py-24">
-        <div className="w-full max-w-xl mx-auto text-center">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight mb-4">
-            Ramble
-          </h1>
-          
-          <p className="text-lg sm:text-xl text-[var(--muted)] mb-8 leading-relaxed">
-            Speak naturally. Watch your words appear in real-time.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/signup"
-              className="px-6 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-lg transition-colors"
+      {/* Header */}
+      <header className="border-b border-[var(--border)] px-4 sm:px-6 py-3">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <h1 className="text-lg font-semibold">Ramble</h1>
+          {apiKey && (
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2 hover:bg-[var(--surface)] rounded-lg transition-colors"
+              title="Settings"
             >
-              Get Started
-            </Link>
-            <Link
-              href="/login"
-              className="px-6 py-3 bg-[var(--surface)] hover:bg-[var(--surface-hover)] text-[var(--foreground)] font-medium rounded-lg border border-[var(--border)] transition-colors"
-            >
-              Sign In
-            </Link>
-          </div>
+              <svg className="w-5 h-5 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+          )}
         </div>
-        
-        {/* Features */}
-        <div className="mt-16 sm:mt-20 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 w-full max-w-2xl mx-auto px-4 sm:px-0">
-          <div className="p-4 sm:p-5 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
-            <h3 className="text-sm font-medium mb-1">Real-time</h3>
-            <p className="text-sm text-[var(--muted)]">
-              Words appear as you speak.
-            </p>
-          </div>
-          
-          <div className="p-4 sm:p-5 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
-            <h3 className="text-sm font-medium mb-1">Accurate</h3>
-            <p className="text-sm text-[var(--muted)]">
-              Powered by Soniox.
-            </p>
-          </div>
-          
-          <div className="p-4 sm:p-5 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
-            <h3 className="text-sm font-medium mb-1">Everywhere</h3>
-            <p className="text-sm text-[var(--muted)]">
-              Web and Android.
-            </p>
-          </div>
+      </header>
+
+      {/* Content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-8">
+        <div className="w-full max-w-2xl mx-auto">
+          {showSettings ? (
+            <div className="w-full max-w-md mx-auto space-y-4">
+              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-lg p-6">
+                <h2 className="text-lg font-medium mb-4">Settings</h2>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm text-[var(--muted)]">Soniox API Key</label>
+                    <p className="text-sm font-mono mt-1">{"*".repeat(20)}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowSettings(false)}
+                      className="flex-1 px-4 py-2 bg-[var(--surface-hover)] hover:bg-[var(--border)] rounded-lg transition-colors text-sm"
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={handleClearKey}
+                      className="flex-1 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors text-sm"
+                    >
+                      Remove Key
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : apiKey ? (
+            <TranscriptionTool apiKey={apiKey} />
+          ) : (
+            <div className="text-center space-y-8">
+              <div>
+                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-2">Ramble</h2>
+                <p className="text-[var(--muted)]">
+                  Speak naturally. Watch your words appear in real-time.
+                </p>
+              </div>
+              <ApiKeyInput onSave={handleSaveKey} />
+            </div>
+          )}
         </div>
       </div>
-      
-      {/* Footer */}
-      <footer className="border-t border-[var(--border)] py-4 px-4 sm:px-6">
-        <div className="max-w-xl mx-auto flex justify-between items-center text-xs text-[var(--muted)]">
-          <span>Ramble</span>
-          <Link href="/admin/login" className="hover:text-[var(--foreground)] transition-colors">
-            Admin
-          </Link>
-        </div>
-      </footer>
     </main>
   );
 }

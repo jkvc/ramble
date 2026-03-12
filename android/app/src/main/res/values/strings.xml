@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Ramble</string>
-    <string name="ime_name">Ramble Voice</string>
-    <string name="ime_subtype_label">Voice Input</string>
+    <string name="accessibility_service_label">Ramble Voice Input</string>
+    <string name="accessibility_service_description">Ramble uses this accessibility service to provide a floating voice input button that works in any app. It reads focused text fields to insert transcribed speech at the cursor position.</string>
 </resources>

@@ -1,7 +1,6 @@
 package com.ramble.app.soniox
 
 import com.ramble.app.RambleApp
-import com.ramble.app.network.ApiClient
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -82,21 +81,12 @@ class SonioxWebSocketClient {
     audioBuffer.clear()
   }
 
-  suspend fun connect() {
+  suspend fun connect(apiKey: String) {
     if (isConnected) return
 
     try {
-      // Get token from backend
-      val tokenResult = ApiClient.getSonioxToken()
-      if (tokenResult.isFailure) {
-        _events.emit(Event.Error(tokenResult.exceptionOrNull()?.message ?: "Failed to get token"))
-        return
-      }
-
-      val tokenResponse = tokenResult.getOrThrow()
-
-      // Connect to Soniox WebSocket
-      val request = Request.Builder().url(tokenResponse.websocketUrl).build()
+      // Connect to Soniox WebSocket directly
+      val request = Request.Builder().url(WEBSOCKET_URL).build()
 
       webSocket =
         client.newWebSocket(
@@ -112,7 +102,7 @@ class SonioxWebSocketClient {
 
               // Send configuration
               val config =
-                SonioxConfig(api_key = tokenResponse.token, language_hints = languageHints)
+                SonioxConfig(api_key = apiKey, language_hints = languageHints)
               val configJson = json.encodeToString(SonioxConfig.serializer(), config)
               android.util.Log.d("SonioxWS", "Sending config: $configJson")
               webSocket.send(configJson)
@@ -211,5 +201,9 @@ class SonioxWebSocketClient {
     audioBuffer.clear()
     webSocket?.close(1000, "User stopped")
     webSocket = null
+  }
+
+  companion object {
+    private const val WEBSOCKET_URL = "wss://stt-rt.soniox.com/transcribe-websocket"
   }
 }

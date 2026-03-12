@@ -23,24 +23,24 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.ramble.app.ui.LoginScreen
+import com.ramble.app.ui.ApiKeyScreen
 import com.ramble.app.ui.SettingsScreen
 import com.ramble.app.ui.TranscribeScreen
 import com.ramble.app.ui.theme.RambleTheme
 
 class MainActivity : ComponentActivity() {
-    
+
     companion object {
         const val EXTRA_START_DESTINATION = "start_destination"
         const val DESTINATION_SETTINGS = "settings"
     }
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        
+
         val startDestination = intent.getStringExtra(EXTRA_START_DESTINATION)
-        
+
         setContent {
             RambleTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -68,7 +68,7 @@ sealed class BottomNavItem(
         selectedIcon = { Icon(Icons.Filled.Mic, contentDescription = "Transcribe") },
         unselectedIcon = { Icon(Icons.Outlined.Mic, contentDescription = "Transcribe") }
     )
-    
+
     data object Settings : BottomNavItem(
         route = "settings",
         title = "Settings",
@@ -80,20 +80,18 @@ sealed class BottomNavItem(
 @Composable
 fun RambleNavigation(initialDestination: String? = null) {
     val navController = rememberNavController()
-    val authManager = RambleApp.instance.authManager
-    val isLoggedIn by authManager.currentUser.collectAsState()
-    
+    val apiKeyManager = RambleApp.instance.apiKeyManager
+    val apiKey by apiKeyManager.apiKey.collectAsState()
+
     val bottomNavItems = listOf(BottomNavItem.Transcribe, BottomNavItem.Settings)
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    
-    // Determine if we should show bottom nav (only when logged in and on main screens)
-    val showBottomNav = isLoggedIn != null && 
+
+    val showBottomNav = apiKey != null &&
         currentDestination?.route in listOf("transcribe", "settings")
-    
-    // Handle initial destination from intent
-    LaunchedEffect(initialDestination, isLoggedIn) {
-        if (isLoggedIn != null && initialDestination == MainActivity.DESTINATION_SETTINGS) {
+
+    LaunchedEffect(initialDestination, apiKey) {
+        if (apiKey != null && initialDestination == MainActivity.DESTINATION_SETTINGS) {
             navController.navigate("settings") {
                 popUpTo(navController.graph.findStartDestination().id) {
                     saveState = true
@@ -103,7 +101,7 @@ fun RambleNavigation(initialDestination: String? = null) {
             }
         }
     }
-    
+
     Scaffold(
         bottomBar = {
             if (showBottomNav) {
@@ -139,36 +137,36 @@ fun RambleNavigation(initialDestination: String? = null) {
             }
         }
     ) { padding ->
-        val startDestination = if (isLoggedIn != null) "transcribe" else "login"
-        
+        val startDest = if (apiKey != null) "transcribe" else "apikey"
+
         NavHost(
             navController = navController,
-            startDestination = startDestination,
+            startDestination = startDest,
             modifier = Modifier.padding(padding),
             enterTransition = { EnterTransition.None },
             exitTransition = { ExitTransition.None },
             popEnterTransition = { EnterTransition.None },
             popExitTransition = { ExitTransition.None }
         ) {
-            composable("login") {
-                LoginScreen(
-                    onLoginSuccess = {
+            composable("apikey") {
+                ApiKeyScreen(
+                    onApiKeySaved = {
                         navController.navigate("transcribe") {
-                            popUpTo("login") { inclusive = true }
+                            popUpTo("apikey") { inclusive = true }
                         }
                     }
                 )
             }
-            
+
             composable("transcribe") {
                 TranscribeScreen()
             }
-            
+
             composable("settings") {
                 SettingsScreen(
-                    onLogout = {
-                        authManager.logout()
-                        navController.navigate("login") {
+                    onClearApiKey = {
+                        apiKeyManager.clearApiKey()
+                        navController.navigate("apikey") {
                             popUpTo(0) { inclusive = true }
                         }
                     }

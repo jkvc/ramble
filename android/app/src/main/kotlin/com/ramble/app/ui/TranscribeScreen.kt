@@ -21,7 +21,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -32,8 +31,11 @@ import androidx.core.content.ContextCompat
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.provider.Settings
 import com.ramble.app.RambleApp
 import com.ramble.app.audio.AudioRecorder
+import com.ramble.app.overlay.RambleAccessibilityService
 import com.ramble.app.soniox.SonioxWebSocketClient
 import kotlinx.coroutines.launch
 
@@ -41,14 +43,13 @@ import kotlinx.coroutines.launch
 fun TranscribeScreen() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    
+
     var isRecording by remember { mutableStateOf(false) }
     var isConnecting by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    // Use rememberSaveable to persist transcript across navigation
     var transcript by rememberSaveable { mutableStateOf("") }
     var provisional by remember { mutableStateOf("") }
-    
+
     var hasPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -57,7 +58,7 @@ fun TranscribeScreen() {
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
-    
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -66,18 +67,15 @@ fun TranscribeScreen() {
             error = "Microphone permission is required"
         }
     }
-    
+
     val sonioxClient = remember { SonioxWebSocketClient() }
     val audioRecorder = remember { AudioRecorder() }
-    
-    // Observe Soniox events
+
     LaunchedEffect(Unit) {
         sonioxClient.events.collect { event ->
             when (event) {
                 is SonioxWebSocketClient.Event.Connected -> {
-                    // Connection established, audio was already started
                     isConnecting = false
-                    // isRecording is already true from start
                 }
                 is SonioxWebSocketClient.Event.FinalWords -> {
                     transcript += event.text
@@ -100,15 +98,14 @@ fun TranscribeScreen() {
             }
         }
     }
-    
-    // Cleanup on dispose
+
     DisposableEffect(Unit) {
         onDispose {
             sonioxClient.disconnect()
             audioRecorder.stop()
         }
     }
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -116,7 +113,6 @@ fun TranscribeScreen() {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Title matching Settings page style
         Text(
             text = "Transcribe",
             style = MaterialTheme.typography.headlineMedium,
@@ -124,10 +120,66 @@ fun TranscribeScreen() {
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.fillMaxWidth()
         )
-        
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        // Transcript display
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        val serviceRunning by RambleAccessibilityService.isRunning.collectAsState()
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (serviceRunning)
+                    MaterialTheme.colorScheme.primaryContainer
+                else
+                    MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (serviceRunning) {
+                    Text(
+                        text = "Floating button active",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.weight(1f)
+                    )
+                } else {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Enable floating button",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Voice input in any app",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            })
+                        },
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Enable")
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -165,10 +217,9 @@ fun TranscribeScreen() {
                 }
             }
         }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Error display
+
             error?.let { errorMessage ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -186,15 +237,12 @@ fun TranscribeScreen() {
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
-            
-            // Record button row with copy (left), record (center), delete (right)
-            // Evenly distributed across the full width
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Copy button (left quarter)
                 IconButton(
                     onClick = {
                         if (transcript.isNotEmpty()) {
@@ -210,44 +258,44 @@ fun TranscribeScreen() {
                     Icon(
                         imageVector = Icons.Filled.ContentCopy,
                         contentDescription = "Copy",
-                        tint = if (transcript.isNotEmpty()) 
-                            MaterialTheme.colorScheme.primary 
-                        else 
+                        tint = if (transcript.isNotEmpty())
+                            MaterialTheme.colorScheme.primary
+                        else
                             MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
                     )
                 }
-                
-                // Record button (center)
+
                 Button(
                     onClick = {
                         if (!hasPermission) {
                             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                             return@Button
                         }
-                        
+
                         if (isRecording || isConnecting) {
-                            // Stop recording
                             sonioxClient.disconnect()
                             audioRecorder.stop()
                             isRecording = false
                             isConnecting = false
                         } else {
-                            // Start recording immediately
+                            val apiKey = RambleApp.instance.apiKeyManager.apiKey.value
+                            if (apiKey == null) {
+                                error = "Please set your API key in Settings"
+                                return@Button
+                            }
+
                             error = null
                             isConnecting = true
-                            isRecording = true  // Show recording state immediately
-                            
-                            // Start buffering audio immediately
+                            isRecording = true
+
                             sonioxClient.startBuffering()
-                            
-                            // Start audio capture immediately (buffers while connecting)
+
                             audioRecorder.start { audioData ->
                                 sonioxClient.sendAudio(audioData)
                             }
-                            
-                            // Connect to Soniox in parallel
+
                             scope.launch {
-                                sonioxClient.connect()
+                                sonioxClient.connect(apiKey)
                             }
                         }
                     },
@@ -263,8 +311,7 @@ fun TranscribeScreen() {
                         modifier = Modifier.size(32.dp)
                     )
                 }
-                
-                // Delete button (right quarter)
+
                 IconButton(
                     onClick = {
                         transcript = ""
@@ -276,15 +323,14 @@ fun TranscribeScreen() {
                     Icon(
                         imageVector = Icons.Filled.Delete,
                         contentDescription = "Clear",
-                        tint = if (transcript.isNotEmpty()) 
-                            MaterialTheme.colorScheme.primary 
-                        else 
+                        tint = if (transcript.isNotEmpty())
+                            MaterialTheme.colorScheme.primary
+                        else
                             MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
                     )
                 }
             }
-            
-            // Show status only when recording
+
             if (isRecording) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -293,7 +339,7 @@ fun TranscribeScreen() {
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
         }
 }

@@ -1,12 +1,12 @@
 package com.ramble.app
 
 import android.app.Application
-import com.ramble.app.auth.AuthManager
+import com.ramble.app.auth.ApiKeyManager
 import com.ramble.app.settings.SettingsManager
 
 class RambleApp : Application() {
     
-    lateinit var authManager: AuthManager
+    lateinit var apiKeyManager: ApiKeyManager
         private set
     
     lateinit var settingsManager: SettingsManager
@@ -15,7 +15,7 @@ class RambleApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
-        authManager = AuthManager(this)
+        apiKeyManager = ApiKeyManager(this)
         settingsManager = SettingsManager(this)
     }
     

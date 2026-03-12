@@ -34,19 +34,19 @@
             </intent-filter>
         </activity>
 
-        <!-- IME Keyboard Service -->
+        <!-- Floating Overlay Voice Input Service -->
         <service
-            android:name=".ime.RambleKeyboardService"
+            android:name=".overlay.RambleAccessibilityService"
             android:exported="true"
-            android:label="@string/ime_name"
-            android:permission="android.permission.BIND_INPUT_METHOD"
+            android:label="@string/accessibility_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:foregroundServiceType="microphone">
             <intent-filter>
-                <action android:name="android.view.InputMethod" />
+                <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
             <meta-data
-                android:name="android.view.im"
-                android:resource="@xml/method" />
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
         </service>
 
     </application>
