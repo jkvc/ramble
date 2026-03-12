@@ -1,19 +1,13 @@
-# Ramble - Vercel Backend
+# Ramble - Web App
 
-Backend and admin portal for Ramble, powered by Next.js, Supabase, and Soniox.
+Real-time voice transcription web app, powered by Next.js and Soniox.
 
 ## Features
 
-### User
-- Email/password signup and login
-- Dashboard with real-time transcription
-- Voucher redemption for access
-
-### Admin
-- Same login as users (email whitelist in `ADMIN_EMAILS` env var)
-- User management
-- Voucher creation and management
-- Transcription testing tool
+- Enter your Soniox API key (stored in browser localStorage)
+- Real-time transcription via WebSocket streaming
+- Multi-language support (en, zh, es, fr, de, ja, ko)
+- Copy/clear transcribed text
 
 ## Local Development
 
@@ -22,31 +16,16 @@ pnpm install
 pnpm dev
 ```
 
-Create `.env.local` with your Soniox, Supabase, and admin email config. See Vercel dashboard for required variables.
+No backend or environment variables required — the app connects directly to Soniox using the user's API key.
 
-## Database Setup
+## Testing
 
-1. Create a Supabase project
-2. Run `supabase/schema.sql` in the SQL Editor
-3. Copy your project URL and keys to environment variables
-
-## Soniox Integration
-
-The `TranscriptionTool` component handles:
-- Browser microphone via `MediaRecorder`
-- WebSocket streaming to Soniox real-time API
-- Multi-language support (en, zh, es, fr, de, ja, ko)
-- Provisional and final token display
+```bash
+pnpm test
+```
 
 ## Deployment
 
 1. Push to GitHub
 2. Import in Vercel (set root directory to `vercel`)
-3. Add environment variables
-4. Deploy
-
-## Access Flows
-
-**Users**: Sign up → Verify email → Redeem voucher → Use transcription
-
-**Admins**: Sign up/login with whitelisted email → Go to `/admin` → Access admin tools
+3. Deploy — no server-side environment variables needed

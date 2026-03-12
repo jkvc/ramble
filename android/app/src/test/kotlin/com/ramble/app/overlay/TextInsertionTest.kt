@@ -132,14 +132,14 @@ class TextInsertionTest {
 
     @Test
     fun `external typing invalidates provisional gracefully`() {
-        // User typed something that changed the text, making provisional mismatch
+        // User typed something that changed the text at the provisional position
         val oldProvisional = ProvisionalState("world", 6, 5)
-        // But someone changed "world" to "worlds" externally
+        // External edit changed "world" to "wurld" at the provisional position
         val (result, prov) = TextInsertion.applyFinalText(
-            "hello worlds", 12, oldProvisional, "world"
+            "hello wurld", 11, oldProvisional, "world"
         )
-        // Should fall back gracefully — provisional removal fails, inserts at end
-        assertEquals("hello worldsworld", result.text)
+        // Provisional removal fails (mismatch), inserts final text at end
+        assertEquals("hello wurldworld", result.text)
         assertNull(prov)
     }
 }

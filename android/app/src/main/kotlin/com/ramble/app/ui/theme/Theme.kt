@@ -55,8 +55,14 @@ fun RambleTheme(
     // Control system UI bars (status bar and navigation bar)
     val systemUiController = rememberSystemUiController()
     LaunchedEffect(darkTheme) {
-        systemUiController.setStatusBarDarkContentIsLight(darkTheme)
-        systemUiController.setNavigationBarDarkContentIsLight(darkTheme)
+        systemUiController.setStatusBarColor(
+            color = Color.Transparent,
+            darkIcons = !darkTheme
+        )
+        systemUiController.setNavigationBarColor(
+            color = Color.Transparent,
+            darkIcons = !darkTheme
+        )
     }
     
     MaterialTheme(

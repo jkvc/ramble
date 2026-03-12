@@ -1,23 +1,25 @@
 # Ramble - Android App
 
-Voice-to-text keyboard for Android, powered by Soniox real-time transcription.
+Voice-to-text overlay for Android, powered by Soniox real-time transcription.
 
 ## Features
 
 ### Companion App
-- Login with email/password (same account as web)
-- Transcription testing (like web dashboard)
+- Enter Soniox API key (stored in EncryptedSharedPreferences)
+- Transcription testing screen
 - Settings and credential management
 
-### IME Keyboard
-- Record button for voice input
-- Real-time transcription to any text field
-- Provisional text display while speaking
+### Accessibility Overlay
+- Floating pill that appears over any app
+- Tap to start/stop voice recording
+- Real-time transcription inserted into the focused text field
+- Drag to reposition, snaps to screen edge
 
 ## Requirements
 
 - Android 12+ (API 31)
 - Microphone permission
+- Accessibility service permission
 
 ## Setup
 
@@ -34,29 +36,19 @@ Voice-to-text keyboard for Android, powered by Soniox real-time transcription.
 # Install on connected device
 ./gradlew installDebug
 
+# Run unit tests
+./gradlew testDebugUnitTest
+
 # Release build (requires signing config)
 ./gradlew assembleRelease
 ```
 
-## Configuration
+## Enabling the Overlay
 
-Update backend URL in `app/build.gradle.kts`:
-```kotlin
-buildConfigField("String", "BACKEND_URL", "\"https://your-app.vercel.app\"")
-```
-
-Or create `local.properties` with:
-```properties
-BACKEND_URL=https://your-app.vercel.app
-```
-
-## Enabling the Keyboard
-
-1. Open Ramble app and log in
-2. Go to Settings > System > Languages & input > On-screen keyboard
-3. Enable "Ramble Voice"
-4. When typing, switch to Ramble keyboard
-5. Tap the microphone button to speak
+1. Open Ramble app and enter your Soniox API key
+2. Go to Settings > Accessibility > Ramble
+3. Enable the accessibility service
+4. A floating pill will appear — tap it to start voice input in any text field
 
 ## Project Structure
 
@@ -65,11 +57,10 @@ app/src/main/kotlin/com/ramble/app/
 ├── RambleApp.kt          # Application class
 ├── MainActivity.kt       # Companion app entry
 ├── ui/                   # Compose screens
-├── ime/                  # Keyboard service
+├── overlay/              # Accessibility service + floating pill
 ├── audio/                # Audio capture
 ├── soniox/               # WebSocket client
-├── auth/                 # Auth management
-└── network/              # API client
+└── auth/                 # API key management
 ```
 
 ## Tech Stack
