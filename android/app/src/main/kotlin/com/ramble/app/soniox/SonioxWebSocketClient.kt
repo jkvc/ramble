@@ -68,6 +68,9 @@ class SonioxWebSocketClient {
   private var webSocket: WebSocket? = null
   private var isConnected = false
 
+  // Tracks the cumulative final text seen so far in this session, used to compute deltas
+  private var lastFinalText = ""
+
   // Buffer for audio recorded while connecting
   private val audioBuffer = mutableListOf<ByteArray>()
   private var isBuffering = false
@@ -83,6 +86,7 @@ class SonioxWebSocketClient {
 
   suspend fun connect(apiKey: String) {
     if (isConnected) return
+    lastFinalText = ""
 
     try {
       // Connect to Soniox WebSocket directly
@@ -132,6 +136,9 @@ class SonioxWebSocketClient {
                 }
 
                 // Handle tokens format (stt-rt-v3)
+                // Each message is a rolling window: final tokens come first, then non-final.
+                // We emit newly finalized text (delta since last message) and the current
+                // provisional tail as a single coordinated update.
                 message.tokens?.let { tokens ->
                   if (tokens.isNotEmpty()) {
                     var finalText = ""
@@ -146,15 +153,19 @@ class SonioxWebSocketClient {
                       }
                     }
 
-                    if (finalText.isNotEmpty()) {
-                      _events.tryEmit(Event.FinalWords(finalText))
+                    // Compute the delta: only emit final text that is new since last message
+                    val newFinalText = if (finalText.startsWith(lastFinalText)) {
+                      finalText.substring(lastFinalText.length)
+                    } else {
+                      finalText
                     }
-                    if (nonFinalText.isNotEmpty()) {
-                      _events.tryEmit(Event.ProvisionalWords(nonFinalText))
-                    } else if (finalText.isNotEmpty()) {
-                      // Clear provisional when we have final text
-                      _events.tryEmit(Event.ProvisionalWords(""))
+                    lastFinalText = finalText
+
+                    if (newFinalText.isNotEmpty()) {
+                      _events.tryEmit(Event.FinalWords(newFinalText))
                     }
+                    // Always sync provisional (replaces whatever was showing before)
+                    _events.tryEmit(Event.ProvisionalWords(nonFinalText))
                   }
                 }
               } catch (e: Exception) {
@@ -195,9 +206,18 @@ class SonioxWebSocketClient {
     }
   }
 
+  // Send empty binary frame to signal end-of-audio, letting Soniox finalize remaining tokens.
+  // The WebSocket will close naturally after Soniox sends its last message, firing Disconnected.
+  fun finalizeAudio() {
+    if (isConnected) {
+      webSocket?.send(ByteArray(0).toByteString())
+    }
+  }
+
   fun disconnect() {
     isConnected = false
     isBuffering = false
+    lastFinalText = ""
     audioBuffer.clear()
     webSocket?.close(1000, "User stopped")
     webSocket = null

@@ -39,11 +39,12 @@ class RambleAccessibilityService : AccessibilityService() {
     private val audioRecorder = AudioRecorder()
 
     private var pillState = PillState.READY
-    private var provisionalState: ProvisionalState? = null
-    private var isInsertingText = false
 
-    private var isPendingDisconnect = false
-    private var disconnectJob: Job? = null
+    // Transcript accumulated during recording — final only, provisional shown in pill UI
+    private val finalTranscript = StringBuilder()
+    private var provisionalText = ""
+
+    private var isFinalizing = false
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -84,24 +85,20 @@ class RambleAccessibilityService : AccessibilityService() {
         super.onDestroy()
         isRunning.value = false
         scope.cancel()
-        stopRecording()
+        sonioxClient.disconnect()
+        audioRecorder.stop()
         pillView?.let {
             try { windowManager.removeView(it) } catch (_: Exception) {}
         }
         pillView = null
     }
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event == null) return
-        if (isInsertingText) return
-
-        // We track focus events but don't need to store the node —
-        // we find the focused node fresh each time we insert text
-    }
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
 
     override fun onInterrupt() {
-        stopRecording()
+        stopRecording(paste = false)
     }
+
 
     private fun setupTouchListener(pill: View, params: WindowManager.LayoutParams) {
         val threshold = (DRAG_THRESHOLD_DP * resources.displayMetrics.density).toInt()
@@ -172,12 +169,11 @@ class RambleAccessibilityService : AccessibilityService() {
     private fun onPillTapped() {
         when (pillState) {
             PillState.NO_API_KEY -> {
-                // Open the app
                 val intent = packageManager.getLaunchIntentForPackage(packageName)
                 intent?.let { startActivity(it) }
             }
             PillState.READY -> startRecording()
-            PillState.CONNECTING, PillState.RECORDING -> stopRecording()
+            PillState.CONNECTING, PillState.RECORDING -> stopRecording(paste = true)
         }
     }
 
@@ -190,25 +186,28 @@ class RambleAccessibilityService : AccessibilityService() {
                         updatePillState()
                     }
                     is SonioxWebSocketClient.Event.FinalWords -> {
-                        insertFinalText(event.text)
-                        if (isPendingDisconnect) {
-                            scheduleDisconnect()
-                        }
+                        finalTranscript.append(event.text)
+                        provisionalText = ""
+                        updatePillTranscript()
                     }
                     is SonioxWebSocketClient.Event.ProvisionalWords -> {
-                        insertProvisionalText(event.text)
+                        provisionalText = event.text
+                        updatePillTranscript()
                     }
                     is SonioxWebSocketClient.Event.Error -> {
-                        stopRecording()
+                        isFinalizing = false
+                        stopRecording(paste = false)
                     }
                     is SonioxWebSocketClient.Event.Disconnected -> {
-                        stopRecording()
+                        if (isFinalizing) {
+                            isFinalizing = false
+                            pasteAndReset()
+                        }
                     }
                 }
             }
         }
 
-        // Watch API key state
         scope.launch {
             RambleApp.instance.apiKeyManager.apiKey.collect { key ->
                 if (key == null && pillState != PillState.RECORDING && pillState != PillState.CONNECTING) {
@@ -225,6 +224,9 @@ class RambleAccessibilityService : AccessibilityService() {
     private fun startRecording() {
         val apiKey = RambleApp.instance.apiKeyManager.apiKey.value ?: return
 
+        finalTranscript.clear()
+        provisionalText = ""
+
         pillState = PillState.CONNECTING
         updatePillState()
 
@@ -239,69 +241,58 @@ class RambleAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun stopRecording() {
+    private fun stopRecording(paste: Boolean) {
         val wasRecording = pillState == PillState.RECORDING || pillState == PillState.CONNECTING
 
         audioRecorder.stop()
 
-        if (wasRecording) {
-            isPendingDisconnect = true
-            scheduleDisconnect()
+        if (wasRecording && paste) {
+            // Signal Soniox that audio is done — it will flush remaining tokens and close the
+            // WebSocket. The Disconnected event will then trigger pasteAndReset().
+            isFinalizing = true
+            sonioxClient.finalizeAudio()
         } else {
+            isFinalizing = false
             sonioxClient.disconnect()
+            finalTranscript.clear()
+            provisionalText = ""
         }
 
-        provisionalState = null
         pillState = if (RambleApp.instance.apiKeyManager.hasApiKey) PillState.READY else PillState.NO_API_KEY
         updatePillState()
     }
 
-    private fun scheduleDisconnect() {
-        disconnectJob?.cancel()
-        disconnectJob = scope.launch {
-            delay(500)
-            finalizeDisconnect()
+    private fun pasteAndReset() {
+        val text = finalTranscript.toString().trim()
+        finalTranscript.clear()
+        provisionalText = ""
+        sonioxClient.disconnect()
+
+        if (text.isNotEmpty()) {
+            pasteTextAtCursor(text)
         }
     }
 
-    private fun finalizeDisconnect() {
-        isPendingDisconnect = false
-        disconnectJob?.cancel()
-        disconnectJob = null
-        sonioxClient.disconnect()
-
-        // Insert a trailing space after final transcription
+    private fun pasteTextAtCursor(text: String) {
         val node = findFocusedInputNode() ?: return
         val currentText = node.text?.toString() ?: ""
-        val cursorEnd = getCursorEnd(node, currentText)
-        val result = TextInsertion.insertTextAtCursor(currentText, cursorEnd, cursorEnd, " ")
-        performTextAction(node, result)
-        node.recycle()
-    }
+        val cursor = node.textSelectionEnd.let { if (it >= 0) it else currentText.length }
 
-    private fun insertFinalText(text: String) {
-        val node = findFocusedInputNode() ?: return
-        val currentText = node.text?.toString() ?: ""
-        val cursorPos = getCursorEnd(node, currentText)
+        // Insert with a trailing space
+        val insert = if (cursor > 0 && currentText.getOrNull(cursor - 1) != ' ') " $text " else "$text "
+        val newText = currentText.substring(0, cursor) + insert + currentText.substring(cursor)
+        val newCursor = cursor + insert.length
 
-        val (result, newProvisional) = TextInsertion.applyFinalText(
-            currentText, cursorPos, provisionalState, text
-        )
-        provisionalState = newProvisional
-        performTextAction(node, result)
-        node.recycle()
-    }
+        val args = Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, newText)
+        }
+        node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
 
-    private fun insertProvisionalText(text: String) {
-        val node = findFocusedInputNode() ?: return
-        val currentText = node.text?.toString() ?: ""
-        val cursorPos = getCursorEnd(node, currentText)
-
-        val (result, newProvisional) = TextInsertion.applyProvisionalText(
-            currentText, cursorPos, provisionalState, text
-        )
-        provisionalState = newProvisional
-        performTextAction(node, result)
+        val selArgs = Bundle().apply {
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, newCursor)
+            putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, newCursor)
+        }
+        node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, selArgs)
         node.recycle()
     }
 
@@ -309,27 +300,9 @@ class RambleAccessibilityService : AccessibilityService() {
         return rootInActiveWindow?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
     }
 
-    private fun getCursorEnd(node: AccessibilityNodeInfo, text: String): Int {
-        val selection = node.textSelectionEnd
-        return if (selection >= 0) selection else text.length
-    }
-
-    private fun performTextAction(node: AccessibilityNodeInfo, result: InsertionResult) {
-        isInsertingText = true
-        try {
-            val args = Bundle().apply {
-                putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, result.text)
-            }
-            node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-
-            // Set cursor position
-            val selectionArgs = Bundle().apply {
-                putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, result.cursorPosition)
-                putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT, result.cursorPosition)
-            }
-            node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, selectionArgs)
-        } finally {
-            isInsertingText = false
+    private fun updatePillTranscript() {
+        pillView?.let {
+            FloatingPillView.updateTranscript(it, finalTranscript.toString(), provisionalText)
         }
     }
 
